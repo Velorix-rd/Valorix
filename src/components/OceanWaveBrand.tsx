@@ -8,14 +8,14 @@ interface OceanWaveBrandProps {
 }
 
 export const OceanWaveBrand: React.FC<OceanWaveBrandProps> = ({
-  name = 'VAYOR',
+  name = 'VELORIX',
   badge,
   size = 'xl',
   className = ''
 }) => {
   const letters = name.split('');
 
-  // Sizing with '2xl' and 'xl' making VAYOR prominent, bold, and impactful
+  // Sizing with '2xl' and 'xl' making VELORIX prominent, bold, and impactful
   const sizeClasses = {
     sm: 'text-sm tracking-tight',
     md: 'text-lg sm:text-xl tracking-tight',

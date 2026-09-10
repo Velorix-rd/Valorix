@@ -7,7 +7,7 @@ export interface LegalFooterModalProps {
   logoUrl?: string | null;
 }
 
-const ShareFilesBrand: React.FC<{
+const VelorixBrand: React.FC<{
   logoUrl?: string | null;
   subtitle?: string;
   size?: 'sm' | 'md';
@@ -25,7 +25,7 @@ const ShareFilesBrand: React.FC<{
         {!hasError ? (
           <img
             src={effectiveSrc}
-            alt="Vayor Logo"
+            alt="Velorix Logo"
             className="w-full h-full object-cover"
             onError={() => setHasError(true)}
             referrerPolicy="no-referrer"
@@ -36,7 +36,7 @@ const ShareFilesBrand: React.FC<{
       </div>
       <div className="flex flex-col">
         <span className={`font-display font-black ${textClass} tracking-tight text-white uppercase`}>
-          VAY<span className="text-accent">OR</span>
+          VELOR<span className="text-accent">IX</span>
         </span>
         {subtitle && (
           <span className="text-[10px] text-zinc-400 font-medium line-clamp-1">
@@ -126,7 +126,7 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
               <span>Privacy Policy</span>
             </button>
             <span className="text-zinc-600">•</span>
-            <span className="text-zinc-500">© 2026 FIRE DRIVE. All rights reserved.</span>
+            <span className="text-zinc-500">© 2026 VELORIX. All rights reserved.</span>
           </div>
         </div>
 
@@ -148,9 +148,9 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
           >
             {/* Slim Header & Stepper */}
             <div className="px-4 sm:px-6 py-2.5 sm:py-3 border-b border-white/10 bg-zinc-950/95 shrink-0">
-              {/* Share Files Logo & Branding Header */}
+              {/* Velorix Logo & Branding Header */}
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
-                <ShareFilesBrand 
+                <VelorixBrand 
                   logoUrl={logoUrl} 
                   subtitle="Zero-Knowledge Secure File Sharing Protocol" 
                   size="sm" 
@@ -237,9 +237,9 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
             >
               {combinedStep === 'terms' ? (
                 <div className="space-y-4 sm:space-y-5 max-w-4xl mx-auto">
-                  {/* Share Files Brand Header above Terms */}
+                  {/* Velorix Brand Header above Terms */}
                   <div className="p-3 sm:p-4 rounded-2xl bg-zinc-950/80 border border-white/10 flex items-center justify-between gap-3 shadow-md">
-                    <ShareFilesBrand 
+                    <VelorixBrand 
                       logoUrl={logoUrl} 
                       subtitle="Official Terms & Conditions Agreement • Zero-Liability Policy" 
                       size="md" 
@@ -319,9 +319,9 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
                 </div>
               ) : (
                 <div className="space-y-4 sm:space-y-5 max-w-4xl mx-auto">
-                  {/* Share Files Brand Header above Privacy Policy */}
+                  {/* Velorix Brand Header above Privacy Policy */}
                   <div className="p-3 sm:p-4 rounded-2xl bg-zinc-950/80 border border-white/10 flex items-center justify-between gap-3 shadow-md">
-                    <ShareFilesBrand 
+                    <VelorixBrand 
                       logoUrl={logoUrl} 
                       subtitle="Official Privacy Policy & Data Minimization Protocol" 
                       size="md" 
@@ -481,11 +481,11 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
             className="relative w-full max-w-5xl h-full sm:h-[92vh] sm:max-h-[92vh] flex flex-col bg-zinc-900 border-0 sm:border border-white/15 rounded-none sm:rounded-3xl shadow-2xl overflow-hidden text-zinc-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Slim Header with Share Files Branding */}
+            {/* Slim Header with Velorix Branding */}
             <div className="px-4 sm:px-6 py-2.5 sm:py-3 border-b border-white/10 bg-zinc-950/90 shrink-0">
               {/* Top Brand Bar */}
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
-                <ShareFilesBrand 
+                <VelorixBrand 
                   logoUrl={logoUrl} 
                   subtitle="Zero-Knowledge Secure File Sharing Protocol" 
                   size="sm" 
@@ -514,9 +514,9 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
 
             {/* Content Body */}
             <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-5 sm:py-6 space-y-4 sm:space-y-6 text-zinc-200 leading-relaxed max-w-4xl mx-auto w-full">
-              {/* Share Files Brand Header above Terms */}
+              {/* Velorix Brand Header above Terms */}
               <div className="p-3 sm:p-4 rounded-2xl bg-zinc-950/80 border border-white/10 flex items-center justify-between gap-3 shadow-md">
-                <ShareFilesBrand 
+                <VelorixBrand 
                   logoUrl={logoUrl} 
                   subtitle="Official Terms & Conditions Agreement • Zero-Liability Policy" 
                   size="md" 
@@ -622,11 +622,11 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
             className="relative w-full max-w-5xl h-full sm:h-[92vh] sm:max-h-[92vh] flex flex-col bg-zinc-900 border-0 sm:border border-white/15 rounded-none sm:rounded-3xl shadow-2xl overflow-hidden text-zinc-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Slim Header with Share Files Branding */}
+            {/* Slim Header with Velorix Branding */}
             <div className="px-4 sm:px-6 py-2.5 sm:py-3 border-b border-white/10 bg-zinc-950/90 shrink-0">
               {/* Top Brand Bar */}
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
-                <ShareFilesBrand 
+                <VelorixBrand 
                   logoUrl={logoUrl} 
                   subtitle="Zero-Knowledge Secure File Sharing Protocol" 
                   size="sm" 
@@ -655,9 +655,9 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
 
             {/* Content Body */}
             <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-5 sm:py-6 space-y-4 sm:space-y-6 text-zinc-200 leading-relaxed max-w-4xl mx-auto w-full">
-              {/* Share Files Brand Header above Privacy Policy */}
+              {/* Velorix Brand Header above Privacy Policy */}
               <div className="p-3 sm:p-4 rounded-2xl bg-zinc-950/80 border border-white/10 flex items-center justify-between gap-3 shadow-md">
-                <ShareFilesBrand 
+                <VelorixBrand 
                   logoUrl={logoUrl} 
                   subtitle="Official Privacy Policy & Data Minimization Protocol" 
                   size="md" 

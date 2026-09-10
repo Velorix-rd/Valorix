@@ -1,6 +1,6 @@
 {
-  "name": "Vayor",
-  "description": "Vayor – The infinite ocean of ultra-fast file sharing, client-encrypted transfers, and cloud storage vault.",
+  "name": "Velorix | Send Large Files Free | Fast P2P Transfer & Secure Cloud Vault",
+  "description": "Velorix is the fastest free file sharing site. Send unlimited large files instantly via P2P transfer. Secure AES-GCM encrypted cloud storage with no size limits.",
   "requestFramePermissions": [
     "microphone"
   ],

@@ -79,7 +79,8 @@ import {
   Key,
   User as UserIcon,
   Activity as ActivityIcon,
-  ShieldCheck
+  ShieldCheck,
+  FolderGit2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
@@ -89,6 +90,8 @@ import { generateLogo } from './services/logoGenerator';
 import { copyToClipboard } from './utils/clipboard';
 import OfflineP2PShare from './components/OfflineP2PShare';
 import OppoFileDock from './components/OppoFileDock';
+import { GitHubSyncModal } from './components/GitHubSyncModal';
+import { triggerAutoSyncIfEnabled } from './lib/githubSync';
 import { encryptFile, decryptFile } from './lib/encryption';
 import { getFirebaseStorage, storageRef, uploadBytesResumable, getDownloadURL } from './lib/firebase';
 import { getApiUrl } from './config/api';
@@ -423,6 +426,7 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
   const [passwordError, setPasswordError] = useState(false);
   const [decryptedPreviewUrl, setDecryptedPreviewUrl] = useState<string | null>(null);
   const [isDecryptingPreview, setIsDecryptingPreview] = useState(false);
+  const cachedDecryptedBlobRef = useRef<Blob | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -430,10 +434,21 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
 
     const preparePreview = async () => {
       if (!file) return;
+      // Do not preview locked files until unlocked
+      if (file.password && !isUnlocked) return;
+
+      // STRICT DATA SAVING: Only auto-load small images (<= 3MB) for thumbnail preview
+      // NEVER auto-download large files, videos, audio, or zip archives on page load
+      const isSmallImage = file.type && file.type.startsWith('image/') && (!file.size || file.size <= 3 * 1024 * 1024);
+      if (!isSmallImage) {
+        return;
+      }
+
       if (!file.isEncrypted) {
         setDecryptedPreviewUrl(file.downloadUrl);
         return;
       }
+
       if (file.encryptionIv && file.encryptionKey) {
         setIsDecryptingPreview(true);
         try {
@@ -446,6 +461,7 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
             file.type
           );
           if (active) {
+            cachedDecryptedBlobRef.current = decryptedBlob;
             createdUrl = URL.createObjectURL(decryptedBlob);
             setDecryptedPreviewUrl(createdUrl);
           }
@@ -463,7 +479,7 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
       active = false;
       if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
-  }, [file]);
+  }, [file, isUnlocked]);
 
   useEffect(() => {
     const fetchFile = async () => {
@@ -508,6 +524,32 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
     let lastUpdateUI = 0;
 
     const downloadId = safeUUID();
+
+    // DATA SAVER: If preview already decrypted and cached this file, use it directly with 0 network bytes!
+    if (cachedDecryptedBlobRef.current) {
+      const url = window.URL.createObjectURL(cachedDecryptedBlobRef.current);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setDownloadProgress({
+        id: downloadId,
+        name: file.name,
+        size: file.size,
+        progress: 100,
+        speed: 0,
+        speedHistory: [],
+        remaining: 0,
+        status: 'completed',
+        startTime,
+        loaded: file.size
+      });
+      return;
+    }
+
     setDownloadProgress({
       id: downloadId,
       name: file.name,
@@ -617,7 +659,7 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
             <Share2 className="w-6 h-6 text-black" />
           )}
         </div>
-        <span className="font-display font-bold text-2xl tracking-tighter text-gradient">SHARE<span className="text-accent">FILES</span></span>
+        <span className="font-display font-bold text-2xl tracking-tighter text-gradient">VELOR<span className="text-accent">IX</span></span>
       </div>
       <div className="glass-card p-12 rounded-[40px] text-center max-w-sm w-full">
         <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-6" />
@@ -626,7 +668,7 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
         <button onClick={() => window.location.href = '/'} className="accent-button w-full">Go to Home</button>
       </div>
       <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-[0.2em] mt-12">
-        Securely shared via Vayor 🌊
+        Securely shared via Velorix 🌊
       </p>
     </div>
   );
@@ -642,7 +684,7 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
               <Share2 className="w-6 h-6 text-black" />
             )}
           </div>
-          <span className="font-display font-bold text-2xl tracking-tighter text-gradient">SHARE<span className="text-accent">FILES</span></span>
+          <span className="font-display font-bold text-2xl tracking-tighter text-gradient">VELOR<span className="text-accent">IX</span></span>
         </div>
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
@@ -674,7 +716,7 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
           </div>
         </motion.div>
         <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-[0.2em] mt-12">
-          Securely shared via Vayor 🌊
+          Securely shared via Velorix 🌊
         </p>
       </div>
     );
@@ -698,7 +740,7 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
                 <Share2 className="w-6 h-6 text-black" />
               )}
             </div>
-            <span className="font-display font-bold text-2xl tracking-tighter text-gradient">SHARE<span className="text-accent">FILES</span></span>
+            <span className="font-display font-bold text-2xl tracking-tighter text-gradient">VELOR<span className="text-accent">IX</span></span>
           </div>
         </div>
       </header>
@@ -800,7 +842,7 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
               </motion.div>
             )}
             <p className="text-[9px] sm:text-[10px] text-zinc-600 font-bold uppercase tracking-[0.2em] pt-4">
-              Securely shared via Vayor 🌊
+              Securely shared via Velorix 🌊
             </p>
           </div>
         </motion.div>
@@ -906,6 +948,7 @@ export default function App() {
   const [showOfflineShare, setShowOfflineShare] = useState(false);
   const [initialP2pFile, setInitialP2pFile] = useState<File | null>(null);
   const [showOnlineShareModal, setShowOnlineShareModal] = useState(false);
+  const [showGitHubSyncModal, setShowGitHubSyncModal] = useState(false);
 
   const [folders, setFolders] = useState<FolderMetadata[]>([]);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
@@ -950,51 +993,82 @@ export default function App() {
   const trackingLock = useRef(false);
 
   useEffect(() => {
-    // Real-time WebSocket Presence Tracking
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
+    // Real-time WebSocket Presence Tracking with robust network switch recovery
     let socket: WebSocket | null = null;
-    let reconnectTimeout: NodeJS.Timeout;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let isMounted = true;
 
     const connect = () => {
+      if (!isMounted) return;
       try {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
         socket = new WebSocket(wsUrl);
-      } catch (err) {
-        console.warn('WebSocket connection init restricted:', err);
-        return;
-      }
 
-      socket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'count') {
-            setVisitorCount(data.value);
-            setLiveUsersInfo({ real: data.value, fake: data.fakeBase || 0 });
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'count') {
+              setVisitorCount(data.value);
+              setLiveUsersInfo({ real: data.value, fake: data.fakeBase || 0 });
+            }
+          } catch (err) {
+            console.warn('[WS] Ignored unparseable presence message');
           }
-        } catch (err) {
-          console.error('Failed to parse socket message:', err);
-        }
-      };
+        };
 
-      socket.onclose = () => {
-        // Attempt to reconnect after 5 seconds
-        reconnectTimeout = setTimeout(connect, 5000);
-      };
+        socket.onclose = () => {
+          if (!isMounted) return;
+          if (reconnectTimeout) clearTimeout(reconnectTimeout);
+          // Safely reconnect when network restores
+          reconnectTimeout = setTimeout(() => {
+            if (isMounted && navigator.onLine) {
+              connect();
+            }
+          }, 4000);
+        };
 
-      socket.onerror = (err) => {
-        console.warn('WebSocket connection restricted or blocked by iframe sandbox:', err);
-        socket?.close();
-      };
+        socket.onerror = (err) => {
+          console.warn('[WS] Presence connection temporarily paused on network change');
+          try {
+            socket?.close();
+          } catch (e) {
+            // ignore
+          }
+        };
+      } catch (err) {
+        console.warn('[WS] WebSocket connection init restricted:', err);
+      }
     };
 
     connect();
 
-    return () => {
-      if (socket) {
-        socket.onclose = null; // Prevent reconnect on intentional close
-        socket.close();
+    const handleNetworkChange = () => {
+      if (socket && socket.readyState !== WebSocket.OPEN) {
+        try {
+          socket.close();
+        } catch (e) {
+          // ignore
+        }
+        connect();
       }
-      clearTimeout(reconnectTimeout);
+    };
+
+    window.addEventListener('online', handleNetworkChange);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('online', handleNetworkChange);
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (socket) {
+        socket.onclose = null;
+        socket.onerror = null;
+        try {
+          socket.close();
+        } catch (e) {
+          // ignore
+        }
+      }
     };
   }, []);
 
@@ -1146,9 +1220,12 @@ export default function App() {
 
   useEffect(() => {
     const checkLatency = async () => {
+      // Don't waste mobile data if tab is in background or device screen is off
+      if (document.hidden) return;
+
       const start = performance.now();
       try {
-        const response = await fetch(getApiUrl(`/api/ping?t=${Date.now()}`), {
+        const response = await fetch(getApiUrl('/api/ping'), {
           cache: 'no-store'
         });
         
@@ -1158,22 +1235,31 @@ export default function App() {
         const diff = end - start;
         setLatency(Math.max(1, Math.round(diff)));
       } catch (e) {
-        // Silently handle latency check failures to avoid console clutter
-        // unless it's a persistent issue
         setLatency(0);
       }
     };
     
-    // Small delay before first check to ensure server is ready
-    const initialTimeout = setTimeout(() => {
-      checkLatency();
-    }, 1000);
+    // Initial check after 2s
+    const initialTimeout = setTimeout(checkLatency, 2000);
 
-    const interval = setInterval(checkLatency, 5000); // Increase interval to 5s to reduce noise
+    // Conservative interval (60s) and only when tab is visible to save data
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        checkLatency();
+      }
+    }, 60000);
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        checkLatency();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
     
     return () => {
       clearTimeout(initialTimeout);
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, []);
 
@@ -1747,7 +1833,11 @@ export default function App() {
               console.warn('Could not sync file to Firestore:', err);
             }
           }
-          setFiles(prev => [fileMetadata, ...prev.filter(f => f.id !== fileMetadata.id)]);
+          setFiles(prev => {
+            const updated = [fileMetadata, ...prev.filter(f => f.id !== fileMetadata.id)];
+            triggerAutoSyncIfEnabled(updated, fileMetadata.name);
+            return updated;
+          });
           addActivity('upload', fileMetadata.name);
           setUploads(prev => prev.map(u => u.id === uploadId ? { ...u, status: 'completed', progress: 100 } : u));
           setShareFile(fileMetadata);
@@ -2148,7 +2238,7 @@ export default function App() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-display font-black tracking-tight uppercase">WELCOME TO FIRE DRIVE</h2>
+                  <h2 className="text-2xl font-display font-black tracking-tight uppercase">WELCOME TO VELORIX</h2>
                   <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em]">Please enter your name to continue</p>
                 </div>
                 <div className="w-full space-y-4">
@@ -2250,17 +2340,21 @@ export default function App() {
                       <Share2 className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400" />
                     )}
                   </div>
-                  <div className="py-1">
-                    <OceanWaveBrand name="VAYOR" badge="VAULT" size="xl" />
+                  <div className="py-1 relative">
+                    <OceanWaveBrand name="VELORIX" badge="VAULT" size="xl" />
+                    <div className="absolute -bottom-1 right-0 flex items-center gap-1.5 translate-y-full">
+                      <span className="text-[8px] font-black text-emerald-400/70 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/20">VER 2.2.0</span>
+                      <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                    </div>
                   </div>
-                  <p className="text-[11px] sm:text-xs text-zinc-300 font-medium mt-0.5">
-                    The Infinite Ocean of Ultra-Fast File Sharing & Cloud Vault
-                  </p>
+                  <h1 className="text-[11px] sm:text-xs text-zinc-300 font-semibold mt-0.5 tracking-wide">
+                    Secure P2P Cloud Storage & AES-GCM Encrypted File Sharing
+                  </h1>
                   
                   {/* Short App Description added above Google login */}
                   <div className="mt-2 px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-[10px] sm:text-[11px] text-zinc-300 leading-snug max-w-xs sm:max-w-sm mx-auto">
                     <p>
-                      Transfer unlimited files device-to-device with zero cloud latency, client-side encryption, and cloud storage — no limits or sign-up needed.
+                      Transfer unlimited large files with zero server exposure using military-grade AES-GCM encryption and direct peer-to-peer cloud storage.
                     </p>
                   </div>
 
@@ -2404,7 +2498,7 @@ export default function App() {
                       )}
                     </div>
                     <div>
-                      <OceanWaveBrand name="VAYOR" badge="ETHER" size="sm" />
+                      <OceanWaveBrand name="VELORIX" badge="ETHER" size="sm" />
                       <div className="flex items-center gap-2">
                         <p className="text-[10px] text-zinc-400 font-medium hidden sm:block">Infinite Cloud & P2P Vault</p>
                         {liveUsersInfo !== null && (
@@ -2419,11 +2513,20 @@ export default function App() {
                   
                   <div className="flex items-center gap-2">
                     <button 
+                      onClick={() => setShowGitHubSyncModal(true)}
+                      className="px-3 py-1.5 rounded-xl bg-zinc-900 border border-emerald-500/30 hover:border-emerald-400 text-zinc-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                      title="GitHub Vault Sync & Deploy Helper"
+                    >
+                      <FolderGit2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="hidden md:inline">GitHub Sync</span>
+                    </button>
+
+                    <button 
                       onClick={() => setShowOfflineShare(true)}
                       className="px-3 py-1.5 rounded-xl bg-accent text-black font-bold text-xs flex items-center gap-1.5 shadow-md shadow-accent/20 hover:brightness-110 active:scale-95 transition-all"
                     >
                       <Zap className="w-3.5 h-3.5 fill-black" />
-                      <span>Nearby Share</span>
+                      <span>Direct P2P Share</span>
                     </button>
 
                     {user ? (
@@ -2480,7 +2583,7 @@ export default function App() {
                       <Globe className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-xs sm:text-sm font-bold text-white">Online Share</h4>
+                      <h4 className="text-xs sm:text-sm font-bold text-white">Velorix Link</h4>
                       <p className="text-[10px] text-zinc-400">Web Link & QR Code</p>
                     </div>
                   </button>
@@ -2493,7 +2596,7 @@ export default function App() {
                       <Zap className="w-5 h-5 fill-black" />
                     </div>
                     <div>
-                      <h4 className="text-xs sm:text-sm font-bold text-white">Offline Send</h4>
+                      <h4 className="text-xs sm:text-sm font-bold text-white">P2P Transfer</h4>
                       <p className="text-[10px] text-zinc-400">Offline P2P & Sound</p>
                     </div>
                   </button>
@@ -3603,7 +3706,7 @@ export default function App() {
                     />
                   </div>
                   
-                  <h3 className="text-xl sm:text-2xl font-display font-bold mb-2 uppercase tracking-tight">FILE READY TO SHARE</h3>
+                  <h3 className="text-xl sm:text-2xl font-display font-bold mb-2 uppercase tracking-tight">FILE READY FOR VELORIX SEND</h3>
                   <p className="text-zinc-500 text-xs sm:text-sm mb-8 font-medium">Scan or copy link to share this item.</p>
                 </div>
                 
@@ -3711,8 +3814,8 @@ export default function App() {
                       <Globe className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-black tracking-tight text-white uppercase">Online Share Hub</h3>
-                      <p className="text-xs text-zinc-400">Share any file securely with a web link</p>
+                      <h3 className="text-lg font-black tracking-tight text-white uppercase">Velorix Cloud Hub</h3>
+                      <p className="text-xs text-zinc-400">Securely share any file with a branded link</p>
                     </div>
                   </div>
                   <button 
@@ -4105,7 +4208,7 @@ export default function App() {
                       <h3 className="text-lg font-bold text-white flex items-center gap-2">
                         {isSignUp ? 'Create Account' : (
                           <>
-                            Welcome to <OceanWaveBrand name="VAYOR" size="sm" />
+                            Welcome to <OceanWaveBrand name="VELORIX" size="sm" />
                           </>
                         )}
                       </h3>
@@ -4439,6 +4542,13 @@ export default function App() {
         externalModal={showLegalModal} 
         onCloseExternal={() => setShowLegalModal(null)} 
         logoUrl={logoUrl}
+      />
+
+      {/* GitHub Vault Cloud Sync & Auto-Deploy Modal */}
+      <GitHubSyncModal 
+        isOpen={showGitHubSyncModal}
+        onClose={() => setShowGitHubSyncModal(false)}
+        vaultFiles={files}
       />
       </div>
     </ErrorBoundary>

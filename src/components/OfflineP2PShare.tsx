@@ -260,128 +260,187 @@ export default function OfflineP2PShare({ onClose, currentUserDisplayName, initi
     }
   };
 
-  // Setup WebSocket room signaling lane
+  // Setup WebSocket room signaling lane with auto-reconnect on network switch
   useEffect(() => {
-    const wsUrl = getWsUrl();
-    const socket = new WebSocket(wsUrl);
-    signalSocketRef.current = socket;
+    let socket: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let isComponentMounted = true;
 
-    socket.onopen = () => {
-      // Register device automatically
-      socket.send(JSON.stringify({
-        type: 'register-peer',
-        peerId,
-        name: myNickname
-      }));
-    };
-
-    socket.onmessage = async (event) => {
+    const connectSocket = () => {
+      if (!isComponentMounted) return;
       try {
-        const message = JSON.parse(event.data);
-        
-        if (message.type === 'peers-list') {
-          const rawPeers = message.peers as any[];
-          
-          // Re-serialize peer arrays in state
-          const list = rawPeers
-            .filter(p => p.id !== peerId)
-            .map((p, index) => ({
-              id: p.id,
-              name: p.name,
-              pin: p.pin || (100000 + (index * 382) % 900000).toString(),
-              soundFreq: BASE_FREQUENCY + (index * FREQ_STEP)
-            }));
-          setNearbyPeers(list);
-        }
-        
-        else if (message.type === 'relay-message') {
-          handleRelayMessage(message.payload);
-        }
-        
-        else if (message.type === 'webrtc-signal') {
-          const { from, signal } = message;
-          
-          if (signal.type === 'offer') {
-            console.log('WebRTC signaling offer accepted. Opening secure data highway...');
-            setTransportMode('webrtc');
-            setTransferRole('receiver');
-            setTransferStatus('negotiating');
-            
-            cleanupWebRTC();
-            
-            const pc = createPeerConnection(from);
-            await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
-            
-            isRemoteDescriptionSetRef.current = true;
-            for (const cand of pendingCandidatesRef.current) {
-              try {
-                await pc.addIceCandidate(new RTCIceCandidate(cand));
-              } catch (e) {
-                console.error('Error draining candidate:', e);
-              }
-            }
-            pendingCandidatesRef.current = [];
-            
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            
-            socket.send(JSON.stringify({
-              type: 'webrtc-signal',
-              to: from,
-              signal: { type: 'answer', sdp: answer.sdp }
-            }));
-          } 
-          
-          else if (signal.type === 'answer') {
-            if (pcRef.current) {
-              await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
-              isRemoteDescriptionSetRef.current = true;
-              
-              for (const cand of pendingCandidatesRef.current) {
-                try {
-                  await pcRef.current.addIceCandidate(new RTCIceCandidate(cand));
-                } catch (e) {
-                  console.error('Error draining sender candidate:', e);
-                }
-              }
-              pendingCandidatesRef.current = [];
-            }
-          } 
-          
-          else if (signal.type === 'candidate') {
-            if (pcRef.current) {
-              if (isRemoteDescriptionSetRef.current) {
-                try {
-                  await pcRef.current.addIceCandidate(new RTCIceCandidate(signal.candidate));
-                } catch (e) {
-                  console.error('Candidate mapping crash avoided:', e);
-                }
-              } else {
-                pendingCandidatesRef.current.push(signal.candidate);
-              }
-            }
-          }
+        const wsUrl = getWsUrl();
+        socket = new WebSocket(wsUrl);
+        signalSocketRef.current = socket;
 
-          else if (signal.type === 'fallback-to-websocket') {
-            console.warn('Fallback relay requested by Sender on route signal block.');
-            cleanupWebRTC();
-            setTransportMode('websocket');
-            setTransferRole('receiver');
-            setTransferStatus('transferring');
-            setTransferredBytes(0);
-            setTransferProgress(0);
-            receivedChunksRef.current = [];
-            transferStartTime.current = performance.now();
-            lastProgressUpdate.current = performance.now();
+        socket.onopen = () => {
+          if (!isComponentMounted) return;
+          try {
+            socket?.send(JSON.stringify({
+              type: 'register-peer',
+              peerId,
+              name: myNickname
+            }));
+          } catch (sendErr) {
+            console.warn('[P2P WS] Error sending register-peer:', sendErr);
           }
-        }
-      } catch (err) {
-        console.error('Signaling connection error:', err);
+        };
+
+        socket.onerror = (wsErr) => {
+          console.warn('[P2P WS] Non-fatal WebSocket connection issue:', wsErr);
+        };
+
+        socket.onclose = () => {
+          if (!isComponentMounted) return;
+          if (reconnectTimeout) clearTimeout(reconnectTimeout);
+          // Safely reconnect with exponential backoff if network changes or drops
+          reconnectTimeout = setTimeout(() => {
+            if (isComponentMounted && navigator.onLine) {
+              connectSocket();
+            }
+          }, 3000);
+        };
+
+        socket.onmessage = async (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            
+            if (message.type === 'peers-list') {
+              const rawPeers = message.peers as any[];
+              
+              // Re-serialize peer arrays in state
+              const list = rawPeers
+                .filter(p => p.id !== peerId)
+                .map((p, index) => ({
+                  id: p.id,
+                  name: p.name,
+                  pin: p.pin || (100000 + (index * 382) % 900000).toString(),
+                  soundFreq: BASE_FREQUENCY + (index * FREQ_STEP)
+                }));
+              setNearbyPeers(list);
+            }
+            
+            else if (message.type === 'relay-message') {
+              handleRelayMessage(message.payload);
+            }
+            
+            else if (message.type === 'webrtc-signal') {
+              const { from, signal } = message;
+              
+              if (signal.type === 'offer') {
+                console.log('WebRTC signaling offer accepted. Opening secure data highway...');
+                setTransportMode('webrtc');
+                setTransferRole('receiver');
+                setTransferStatus('negotiating');
+                
+                cleanupWebRTC();
+                
+                const pc = createPeerConnection(from);
+                await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
+                
+                isRemoteDescriptionSetRef.current = true;
+                for (const cand of pendingCandidatesRef.current) {
+                  try {
+                    await pc.addIceCandidate(new RTCIceCandidate(cand));
+                  } catch (e) {
+                    console.error('Error draining candidate:', e);
+                  }
+                }
+                pendingCandidatesRef.current = [];
+                
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                  socket.send(JSON.stringify({
+                    type: 'webrtc-signal',
+                    to: from,
+                    signal: { type: 'answer', sdp: answer.sdp }
+                  }));
+                }
+              } 
+              
+              else if (signal.type === 'answer') {
+                if (pcRef.current) {
+                  await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
+                  isRemoteDescriptionSetRef.current = true;
+                  
+                  for (const cand of pendingCandidatesRef.current) {
+                    try {
+                      await pcRef.current.addIceCandidate(new RTCIceCandidate(cand));
+                    } catch (e) {
+                      console.error('Error draining sender candidate:', e);
+                    }
+                  }
+                  pendingCandidatesRef.current = [];
+                }
+              } 
+              
+              else if (signal.type === 'candidate') {
+                if (pcRef.current) {
+                  if (isRemoteDescriptionSetRef.current) {
+                    try {
+                      await pcRef.current.addIceCandidate(new RTCIceCandidate(signal.candidate));
+                    } catch (e) {
+                      console.error('Candidate mapping crash avoided:', e);
+                    }
+                  } else {
+                    pendingCandidatesRef.current.push(signal.candidate);
+                  }
+                }
+              }
+
+              else if (signal.type === 'fallback-to-websocket') {
+                console.warn('Fallback relay requested by Sender on route signal block.');
+                cleanupWebRTC();
+                setTransportMode('websocket');
+                setTransferRole('receiver');
+                setTransferStatus('transferring');
+                setTransferredBytes(0);
+                setTransferProgress(0);
+                receivedChunksRef.current = [];
+                transferStartTime.current = performance.now();
+                lastProgressUpdate.current = performance.now();
+              }
+            }
+          } catch (err) {
+            console.error('Signaling connection error:', err);
+          }
+        };
+      } catch (connErr) {
+        console.warn('[P2P WS] Init connection error:', connErr);
       }
     };
 
+    connectSocket();
+
+    // Re-connect immediately on network change (Wi-Fi <-> Mobile data)
+    const handleOnline = () => {
+      if (socket && socket.readyState !== WebSocket.OPEN) {
+        try {
+          socket.close();
+        } catch (e) {
+          // ignore
+        }
+        connectSocket();
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+
     return () => {
-      socket.close();
+      isComponentMounted = false;
+      window.removeEventListener('online', handleOnline);
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (socket) {
+        socket.onclose = null;
+        socket.onerror = null;
+        try {
+          socket.close();
+        } catch (e) {
+          // ignore
+        }
+      }
       cleanupWebRTC();
       stopChirping();
       stopListeningToChirps();

@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.sharefiles.app',
-  appName: 'Share Files',
+  appId: 'com.velorix.app',
+  appName: 'Velorix',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

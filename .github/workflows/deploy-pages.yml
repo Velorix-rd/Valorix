@@ -28,22 +28,10 @@ jobs:
         run: npm install
       - name: Build project
         run: npm run build
-      - name: Add CNAME for custom domain
-        run: |
-          if [ -d dist ]; then
-            echo "share-files-rd.duckdns.org" > dist/CNAME
-          else
-            echo "dist directory not found; creating simple static site"
-            mkdir -p dist
-            cat > dist/index.html <<'HTML'
-            <!doctype html>
-            <meta charset="utf-8">
-            <title>Share Files</title>
-            <h1>Site Live</h1>
-            <p>share-files-rd.duckdns.org</p>
-          HTML
-            echo "share-files-rd.duckdns.org" > dist/CNAME
-          fi
+
+      - name: Add .nojekyll to prevent Jekyll filtering
+        run: touch dist/.nojekyll
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

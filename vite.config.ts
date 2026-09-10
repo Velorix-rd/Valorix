@@ -6,11 +6,12 @@ import {defineConfig, loadEnv} from 'vite';
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
+    base: './',
     plugins: [react(), tailwindcss()],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL || 'http://localhost:3000'),
-      'process.env.VITE_WS_URL': JSON.stringify(env.VITE_WS_URL || 'ws://localhost:3000'),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
+      ...(env.VITE_API_URL ? { 'process.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL) } : {}),
+      ...(env.VITE_WS_URL ? { 'process.env.VITE_WS_URL': JSON.stringify(env.VITE_WS_URL) } : {}),
     },
     resolve: {
       alias: {
@@ -27,10 +28,15 @@ export default defineConfig(({mode}) => {
       outDir: 'dist',
       sourcemap: false,
       minify: 'esbuild',
+      cssCodeSplit: true,
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {
           manualChunks: {
-            'vendor': ['react', 'react-dom'],
+            'react-vendor': ['react', 'react-dom'],
+            'firebase-vendor': ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/storage'],
+            'ui-vendor': ['lucide-react', 'motion'],
+            'utils-vendor': ['date-fns', 'clsx', 'tailwind-merge', 'qrcode.react'],
           },
         },
       },

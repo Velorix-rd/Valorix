@@ -6,9 +6,19 @@ import fs from 'fs-extra';
 import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import nodemailer from 'nodemailer';
+import compression from 'compression';
 
 const PORT = 3000;
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
+
+// Prevent unexpected process exits on unhandled errors or closed sockets
+process.on('uncaughtException', (err) => {
+  console.error('[Process] Uncaught exception caught safely:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Process] Unhandled rejection caught safely:', reason);
+});
 
 // Email configuration
 const transporter = nodemailer.createTransport({
@@ -61,6 +71,9 @@ const upload = multer({
 
 async function startServer() {
   const app = express();
+
+  // High performance compression
+  app.use(compression());
 
   // Enable CORS for custom domain & external origins
   app.use((req, res, next) => {
@@ -161,6 +174,13 @@ async function startServer() {
         'Content-Type': 'application/octet-stream',
       };
       res.writeHead(206, head);
+      file.on('error', (streamErr) => {
+        console.warn('[Stream] Range read error on client abort:', streamErr.message);
+        if (!res.headersSent) res.status(500).end();
+      });
+      res.on('close', () => {
+        file.destroy();
+      });
       file.pipe(res);
     } else {
       const head = {
@@ -169,14 +189,22 @@ async function startServer() {
         'Content-Disposition': `attachment; filename="${req.params.filename.split('-').slice(2).join('-')}"`
       };
       res.writeHead(200, head);
-      fs.createReadStream(filePath).pipe(res);
+      const fullStream = fs.createReadStream(filePath);
+      fullStream.on('error', (streamErr) => {
+        console.warn('[Stream] Full read error on client abort:', streamErr.message);
+        if (!res.headersSent) res.status(500).end();
+      });
+      res.on('close', () => {
+        fullStream.destroy();
+      });
+      fullStream.pipe(res);
     }
   });
 
   // Permanent storage: No auto-deletion or expiration job
   // All uploaded files are preserved permanently without expiry
 
-  // --- Vite Middleware ---
+  // --- Vite Middleware & Static Serving ---
   if (process.env.NODE_ENV !== 'production') {
     console.log('Starting in development mode with Vite middleware...');
     const vite = await createViteServer({
@@ -190,13 +218,26 @@ async function startServer() {
     console.log('Resolved distPath:', distPath);
     if (fs.existsSync(distPath)) {
       console.log('Serving static files from:', distPath);
-      app.use(express.static(distPath));
-      app.get('*', (req, res) => {
+      app.use(express.static(distPath, {
+        maxAge: '1d',
+        index: false
+      }));
+
+      // Prevent 404 assets from returning index.html
+      app.use('/assets', (req, res) => {
+        res.status(404).send('Asset not found');
+      });
+
+      app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api') || req.path.startsWith('/ws')) {
+          return next();
+        }
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
         res.sendFile(path.join(distPath, 'index.html'));
       });
     } else {
       console.error('CRITICAL: Production mode enabled but dist folder not found at:', distPath);
-      console.log('Falling back to Vite middleware (this will be slow)...');
+      console.log('Falling back to Vite middleware...');
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: 'spa',
@@ -217,38 +258,58 @@ async function startServer() {
 
     let registeredPeerId: string | null = null;
 
+    ws.on('error', (wsErr) => {
+      console.warn('[WS] Client socket connection error:', wsErr.message);
+    });
+
     ws.on('message', (messageData) => {
       try {
         const raw = messageData.toString();
         const data = JSON.parse(raw);
 
+        if (typeof data !== 'object' || data === null) return;
+
         if (data.type === 'register-peer') {
           const { peerId, name } = data;
-          registeredPeerId = peerId;
-          peers.set(peerId, { ws, name });
-          console.log(`Peer registered: ${name} (${peerId})`);
-          broadcastPeers();
+          if (typeof peerId === 'string' && peerId.length <= 128) {
+            registeredPeerId = peerId;
+            const sanitizedName = typeof name === 'string' ? name.slice(0, 50) : 'Device';
+            peers.set(peerId, { ws, name: sanitizedName });
+            broadcastPeers();
+          }
         } 
         else if (data.type === 'webrtc-signal') {
           const { to, signal } = data;
-          const target = peers.get(to);
-          if (target && target.ws.readyState === WebSocket.OPEN) {
-            target.ws.send(JSON.stringify({
-              type: 'webrtc-signal',
-              from: registeredPeerId,
-              signal
-            }));
+          if (typeof to === 'string' && peers.has(to)) {
+            const target = peers.get(to);
+            if (target && target.ws.readyState === WebSocket.OPEN) {
+              try {
+                target.ws.send(JSON.stringify({
+                  type: 'webrtc-signal',
+                  from: registeredPeerId,
+                  signal
+                }));
+              } catch (sendErr) {
+                console.warn('[WS] Failed to send webrtc-signal to peer:', sendErr);
+              }
+            }
           }
         }
         else if (data.type === 'relay-message') {
           const { to, payload } = data;
-          const target = peers.get(to);
-          if (target && target.ws.readyState === WebSocket.OPEN) {
-            target.ws.send(JSON.stringify({
-              type: 'relay-message',
-              from: registeredPeerId,
-              payload
-            }));
+          if (typeof to === 'string' && peers.has(to)) {
+            const target = peers.get(to);
+            if (target && target.ws.readyState === WebSocket.OPEN) {
+              try {
+                target.ws.send(JSON.stringify({
+                  type: 'relay-message',
+                  from: registeredPeerId,
+                  payload
+                }));
+              } catch (sendErr) {
+                console.warn('[WS] Failed to send relay-message to peer:', sendErr);
+              }
+            }
           }
         }
       } catch (err) {
@@ -285,8 +346,12 @@ async function startServer() {
     const realCount = activeUsers.size;
     const message = JSON.stringify({ type: 'count', value: realCount, fakeBase });
     wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
+      try {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(message);
+        }
+      } catch (e) {
+        console.error('[WS] Error sending count broadcast:', e);
       }
     });
   }
@@ -298,8 +363,12 @@ async function startServer() {
     }));
     const message = JSON.stringify({ type: 'peers-list', peers: list });
     peers.forEach((p) => {
-      if (p.ws.readyState === WebSocket.OPEN) {
-        p.ws.send(message);
+      try {
+        if (p.ws.readyState === WebSocket.OPEN) {
+          p.ws.send(message);
+        }
+      } catch (e) {
+        console.error('[WS] Error sending peer broadcast:', e);
       }
     });
   }
