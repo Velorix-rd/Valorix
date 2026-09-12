@@ -98,6 +98,8 @@ import { getApiUrl } from './config/api';
 import { LegalFooterModal } from './components/LegalFooterModal';
 import OceanWaveBrand from './components/OceanWaveBrand';
 import FeaturesShowcase from './components/FeaturesShowcase';
+import { SimpleContactFooter } from './components/SimpleContactFooter';
+import { APP_VERSION, APP_VERSION_LABEL } from './config/version';
 
 // --- Types ---
 declare global {
@@ -346,39 +348,66 @@ function formatSize(bytes: number) {
 }
 
 function formatTime(seconds: number) {
-  if (seconds === Infinity || isNaN(seconds)) return '--:--';
+  if (seconds === Infinity || isNaN(seconds) || seconds < 0) return '--:--';
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-function SpeedVisualizer({ history, className }: { history: number[], className?: string }) {
+function generateSmoothPath(coords: { x: number; y: number }[]): string {
+  if (coords.length === 0) return '';
+  if (coords.length === 1) return `M ${coords[0].x},${coords[0].y}`;
+  if (coords.length === 2) return `M ${coords[0].x},${coords[0].y} L ${coords[1].x},${coords[1].y}`;
+
+  let d = `M ${coords[0].x.toFixed(1)},${coords[0].y.toFixed(1)}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const p0 = coords[i === 0 ? i : i - 1];
+    const p1 = coords[i];
+    const p2 = coords[i + 1];
+    const p3 = coords[i + 2 < coords.length ? i + 2 : i + 1];
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    d += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+
+const SpeedVisualizer = React.memo(function SpeedVisualizer({ history, className }: { history: number[], className?: string }) {
   if (!history || history.length < 2) return null;
   
   const width = 120;
-  const height = 40;
-  const max = Math.max(...history, 1024);
+  const height = 34;
+  
+  // Use a damped moving max to avoid sudden vertical scale jumping
+  const max = Math.max(...history, 1024 * 100);
   const min = 0;
   const range = max - min || 1;
   
-  const points = history.slice(-30).map((val, i, arr) => {
-    const x = (i / (arr.length - 1)) * width;
-    const y = height - ((val - min) / range) * height;
-    return `${x},${y}`;
-  }).join(' ');
+  const pointsData = history.slice(-24);
+  const coords = pointsData.map((val, i, arr) => {
+    const x = (i / Math.max(arr.length - 1, 1)) * width;
+    const clampedY = Math.max(3, Math.min(height - 3, height - ((val - min) / range) * (height - 6) - 3));
+    return { x, y: clampedY };
+  });
 
-  const areaPoints = `${points} ${width},${height} 0,${height}`;
+  const smoothLine = generateSmoothPath(coords);
+  const smoothArea = `${smoothLine} L ${width},${height} L 0,${height} Z`;
+  const lastPoint = coords[coords.length - 1] || { x: width, y: height / 2 };
 
   return (
-    <div className={cn("relative group/speed", className)}>
+    <div className={cn("relative group/speed select-none pointer-events-none", className)}>
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
         <defs>
-          <linearGradient id="speedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
+          <linearGradient id="speedGradientSmooth" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#00FF9D" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="#00FF9D" stopOpacity="0.0" />
           </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
+          <filter id="speedGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="1.2" result="coloredBlur" />
             <feMerge>
               <feMergeNode in="coloredBlur" />
               <feMergeNode in="SourceGraphic" />
@@ -386,35 +415,31 @@ function SpeedVisualizer({ history, className }: { history: number[], className?
           </filter>
         </defs>
         
-        <polyline
-          fill="url(#speedGradient)"
-          points={areaPoints}
-          className="opacity-20"
+        <path
+          d={smoothArea}
+          fill="url(#speedGradientSmooth)"
         />
         
-        <polyline
+        <path
+          d={smoothLine}
           fill="none"
-          stroke="currentColor"
+          stroke="#00FF9D"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          points={points}
-          className="text-accent"
-          filter="url(#glow)"
+          filter="url(#speedGlow)"
         />
         
-        <motion.circle
-          cx={width}
-          cy={height - ((history[history.length - 1] - min) / range) * height}
+        <circle
+          cx={lastPoint.x}
+          cy={lastPoint.y}
           r="3"
-          className="fill-accent shadow-[0_0_10px_var(--color-accent-glow)]"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          className="fill-accent shadow-[0_0_12px_rgba(0,255,148,0.9)]"
         />
       </svg>
     </div>
   );
-}
+});
 
 function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: string | null }) {
   const [file, setFile] = useState<FileMetadata | null>(null);
@@ -520,8 +545,11 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
     
     const startTime = Date.now();
     let loaded = 0;
-    let speedSamplesDownload: { time: number, loaded: number }[] = [];
     let lastUpdateUI = 0;
+    let smoothedSpeed = 0;
+    let prevLoaded = 0;
+    let prevTime = performance.now();
+    let smoothedRemaining = 0;
 
     const downloadId = safeUUID();
 
@@ -580,36 +608,46 @@ function PublicDownloadPage({ shareId, logoUrl }: { shareId: string, logoUrl: st
         loaded += value.length;
 
         const now = performance.now();
-        speedSamplesDownload.push({ time: now, loaded });
-        
-        const sampleWindow = 2000;
-        while (speedSamplesDownload.length > 0 && speedSamplesDownload[0].time < now - sampleWindow) {
-          speedSamplesDownload.shift();
+        const deltaTime = (now - prevTime) / 1000;
+        const deltaLoaded = loaded - prevLoaded;
+
+        if (deltaTime >= 0.04) {
+          const instantSpeed = deltaLoaded / Math.max(deltaTime, 0.001);
+          const totalElapsed = (Date.now() - startTime) / 1000;
+          const overallAvg = loaded / Math.max(totalElapsed, 0.05);
+
+          if (smoothedSpeed === 0) {
+            smoothedSpeed = instantSpeed > 0 ? instantSpeed : overallAvg;
+          } else {
+            const alpha = 0.25;
+            smoothedSpeed = (smoothedSpeed * (1 - alpha)) + (instantSpeed * alpha);
+          }
+
+          prevLoaded = loaded;
+          prevTime = now;
         }
 
-        const totalElapsed = (Date.now() - startTime) / 1000;
-        const avgSpeed = loaded / (totalElapsed || 0.1);
-        
-        let rollingSpeed = avgSpeed;
-        if (speedSamplesDownload.length >= 2) {
-          const first = speedSamplesDownload[0];
-          const last = speedSamplesDownload[speedSamplesDownload.length - 1];
-          const timeSpan = (last.time - first.time) / 1000;
-          const loadedSpan = last.loaded - first.loaded;
-          rollingSpeed = timeSpan > 0.1 ? loadedSpan / timeSpan : avgSpeed;
+        const progress = Math.min(100, (loaded / contentLength) * 100);
+        const effectiveSpeed = Math.max(smoothedSpeed, 1024);
+        const instantRemaining = Math.max(0, (contentLength - loaded) / effectiveSpeed);
+
+        if (smoothedRemaining === 0) {
+          smoothedRemaining = instantRemaining;
+        } else {
+          smoothedRemaining = (smoothedRemaining * 0.75) + (instantRemaining * 0.25);
         }
 
-        const progress = (loaded / contentLength) * 100;
-        const remaining = (contentLength - loaded) / (rollingSpeed || 1);
-
-        if (now - lastUpdateUI > 100) {
+        if (now - lastUpdateUI > 75 || progress >= 100) {
           lastUpdateUI = now;
+          const displaySpeed = Math.round(smoothedSpeed);
+          const displayRemaining = Math.round(smoothedRemaining);
+
           setDownloadProgress(prev => prev ? {
             ...prev,
             progress,
-            speed: rollingSpeed,
-            speedHistory: [...(prev.speedHistory || []), rollingSpeed].slice(-30),
-            remaining,
+            speed: displaySpeed,
+            speedHistory: [...(prev.speedHistory || []), displaySpeed].slice(-24),
+            remaining: displayRemaining,
             loaded
           } : null);
         }
@@ -1200,6 +1238,16 @@ export default function App() {
   }, [user, userName]);
 
   useEffect(() => {
+    try {
+      if (window.location.hostname === 'share-files-rd.duckdns.org') {
+        window.location.replace('https://velorix-rd.netlify.app' + window.location.pathname + window.location.search + window.location.hash);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (uploads.length > 0) {
         e.preventDefault();
@@ -1727,48 +1775,61 @@ export default function App() {
     }
 
     let lastUpdateUI = 0;
+    let smoothedSpeed = 0;
+    let prevLoaded = 0;
+    let prevTime = performance.now();
+    let smoothedRemaining = 0;
 
     xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
+      if (event.lengthComputable && event.total > 0) {
         const now = performance.now();
-        
-        // Add current sample
-        speedSamples.current.push({ time: now, loaded: event.loaded });
-        
-        // Remove samples older than 2 seconds for a smoother rolling average
-        const sampleWindow = 2000;
-        while (speedSamples.current.length > 0 && speedSamples.current[0].time < now - sampleWindow) {
-          speedSamples.current.shift();
+        const deltaTime = (now - prevTime) / 1000; // in seconds
+        const deltaLoaded = event.loaded - prevLoaded;
+
+        // Prevent division spikes by only sampling when time window >= 40ms
+        if (deltaTime >= 0.04) {
+          const instantSpeed = deltaLoaded / Math.max(deltaTime, 0.001);
+          const totalElapsed = (Date.now() - startTime) / 1000;
+          const overallAvg = event.loaded / Math.max(totalElapsed, 0.05);
+
+          if (smoothedSpeed === 0) {
+            smoothedSpeed = instantSpeed > 0 ? instantSpeed : overallAvg;
+          } else {
+            // Adaptive Exponential Moving Average (EMA) with 25% new weight for smooth real-time response
+            const alpha = 0.25;
+            smoothedSpeed = (smoothedSpeed * (1 - alpha)) + (instantSpeed * alpha);
+          }
+
+          prevLoaded = event.loaded;
+          prevTime = now;
         }
 
-        const totalElapsed = (Date.now() - startTime) / 1000;
-        const avgSpeed = event.loaded / (totalElapsed || 0.1);
+        const progress = Math.min(100, (event.loaded / event.total) * 100);
+        const effectiveSpeed = Math.max(smoothedSpeed, 1024);
+        const instantRemaining = Math.max(0, (event.total - event.loaded) / effectiveSpeed);
         
-        // Calculate rolling speed
-        let rollingSpeed = avgSpeed;
-        if (speedSamples.current.length >= 2) {
-          const first = speedSamples.current[0];
-          const last = speedSamples.current[speedSamples.current.length - 1];
-          const timeSpan = (last.time - first.time) / 1000; // seconds
-          const loadedSpan = last.loaded - first.loaded;
-          rollingSpeed = timeSpan > 0.1 ? loadedSpan / timeSpan : avgSpeed;
+        // Dampen remaining countdown fluctuations
+        if (smoothedRemaining === 0) {
+          smoothedRemaining = instantRemaining;
+        } else {
+          smoothedRemaining = (smoothedRemaining * 0.75) + (instantRemaining * 0.25);
         }
 
-        const progress = (event.loaded / event.total) * 100;
-        const remaining = (event.total - event.loaded) / (rollingSpeed || 1);
-
-        // Throttle UI updates to 10fps for performance and smoothness
-        if (now - lastUpdateUI > 100) {
+        // Real-time smooth UI update at steady 12-14 FPS
+        if (now - lastUpdateUI > 75 || progress >= 100) {
           lastUpdateUI = now;
-          setNetworkSpeed(rollingSpeed);
-          setNetworkSpeedHistory(prev => [...prev, rollingSpeed].slice(-50));
+          const displaySpeed = Math.round(smoothedSpeed);
+          const displayRemaining = Math.round(smoothedRemaining);
+          
+          setNetworkSpeed(displaySpeed);
+          setNetworkSpeedHistory(prev => [...prev, displaySpeed].slice(-30));
           
           setUploads(prev => prev.map(u => u.id === uploadId ? { 
             ...u, 
             progress, 
-            speed: rollingSpeed, 
-            speedHistory: [...(u.speedHistory || []), rollingSpeed].slice(-30),
-            remaining,
+            speed: displaySpeed, 
+            speedHistory: [...(u.speedHistory || []), displaySpeed].slice(-24),
+            remaining: displayRemaining,
             loaded: event.loaded 
           } : u));
         }
@@ -2340,31 +2401,33 @@ export default function App() {
                       <Share2 className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400" />
                     )}
                   </div>
-                  <div className="py-1 relative">
+                  <div className="py-1 flex items-center justify-center">
                     <OceanWaveBrand name="VELORIX" badge="VAULT" size="xl" />
-                    <div className="absolute -bottom-1 right-0 flex items-center gap-1.5 translate-y-full">
-                      <span className="text-[8px] font-black text-emerald-400/70 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/20">VER 2.2.0</span>
-                      <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                    </div>
                   </div>
-                  <h1 className="text-[11px] sm:text-xs text-zinc-300 font-semibold mt-0.5 tracking-wide">
+                  <h1 className="text-[11px] sm:text-xs text-zinc-300 font-semibold mt-1 tracking-wide">
                     Secure P2P Cloud Storage & AES-GCM Encrypted File Sharing
                   </h1>
+
+                  {/* Clean Version & Live Users Badges - Placed cleanly below header */}
+                  <div className="mt-2.5 flex items-center justify-center gap-2 text-[9px] sm:text-[10px] font-medium text-zinc-400">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[9px] font-bold shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>{APP_VERSION_LABEL}</span>
+                    </div>
+
+                    {liveUsersInfo !== null && (
+                      <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                        <span><strong className="text-zinc-200">{liveUsersInfo.real + liveUsersInfo.fake}</strong> Live Users</span>
+                      </div>
+                    )}
+                  </div>
                   
                   {/* Short App Description added above Google login */}
                   <div className="mt-2 px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-[10px] sm:text-[11px] text-zinc-300 leading-snug max-w-xs sm:max-w-sm mx-auto">
                     <p>
                       Transfer unlimited large files with zero server exposure using military-grade AES-GCM encryption and direct peer-to-peer cloud storage.
                     </p>
-                  </div>
-
-                  <div className="mt-2 flex items-center justify-center gap-3 text-[9px] sm:text-[10px] font-medium text-zinc-400">
-                    {liveUsersInfo !== null && (
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span><strong className="text-emerald-400">{liveUsersInfo.real + liveUsersInfo.fake}</strong> Live Users</span>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -2976,60 +3039,118 @@ export default function App() {
                       initial={{ opacity: 0, y: 20, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-                      className="glass-card p-4 sm:p-6 rounded-[24px] sm:rounded-[32px] border-accent/30 bg-accent/[0.02] relative overflow-hidden group mb-4"
+                      className={cn(
+                        "glass-card p-4 sm:p-6 rounded-[24px] sm:rounded-[32px] relative overflow-hidden group mb-4 transition-all duration-300",
+                        u.status === 'encrypting' ? "border-cyan-500/40 bg-cyan-500/[0.04] shadow-[0_0_30px_rgba(6,182,212,0.15)]" :
+                        u.status === 'completed' ? "border-emerald-500/40 bg-emerald-500/[0.03] shadow-[0_0_30px_rgba(16,185,129,0.15)]" :
+                        "border-accent/30 bg-accent/[0.02]"
+                      )}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                       
                       <div className="flex justify-between items-start mb-3 sm:mb-4 relative z-10 gap-4">
                         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent rounded-xl sm:rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(0,255,148,0.3)] relative overflow-hidden shrink-0">
-                            <motion.div 
-                              animate={{ y: [0, -4, 0] }}
-                              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                            >
-                              <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-black" />
-                            </motion.div>
+                          <div className={cn(
+                            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center relative overflow-hidden shrink-0 transition-all duration-300",
+                            u.status === 'encrypting' ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)]" :
+                            u.status === 'completed' ? "bg-emerald-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.4)]" :
+                            "bg-accent text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]"
+                          )}>
+                            {u.status === 'encrypting' ? (
+                              <motion.div 
+                                animate={{ scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] }}
+                                transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                              >
+                                <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                              </motion.div>
+                            ) : u.status === 'completed' ? (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                              >
+                                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-black" />
+                              </motion.div>
+                            ) : (
+                              <motion.div 
+                                animate={{ y: [0, -4, 0] }}
+                                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                              >
+                                <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-black" />
+                              </motion.div>
+                            )}
                             <motion.div 
                               className="absolute bottom-0 left-0 h-1 bg-black/20"
-                              animate={{ width: `${u.progress}%` }}
+                              animate={{ width: `${u.status === 'encrypting' ? 100 : u.progress}%` }}
                             />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs sm:text-sm font-bold truncate group-hover:text-accent transition-colors">{u.name}</p>
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 sm:mt-1">
-                              <div className="flex items-center gap-1.5">
-                                <Zap className="w-2.5 h-2.5 text-accent" />
-                                <span className="text-[8px] sm:text-[10px] font-bold text-accent uppercase tracking-widest whitespace-nowrap">
-                                  {formatSize(u.speed)}/s
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs sm:text-sm font-bold truncate group-hover:text-accent transition-colors">{u.name}</p>
+                              {u.status === 'encrypting' && (
+                                <span className="text-[8px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse flex items-center gap-1">
+                                  <Lock className="w-2.5 h-2.5" /> Encrypting
                                 </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <Clock className="w-2.5 h-2.5 text-zinc-500" />
-                                <span className="text-[8px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest whitespace-nowrap">
-                                  {u.status === 'completed' ? 'Finished' : `${formatTime(u.remaining)} left`}
+                              )}
+                              {u.status === 'completed' && (
+                                <span className="text-[8px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                                  <ShieldCheck className="w-2.5 h-2.5" /> AES-256 Encrypted
                                 </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <HardDrive className="w-2.5 h-2.5 text-zinc-500" />
-                                <span className="text-[8px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest whitespace-nowrap">
-                                  {formatSize(u.loaded)} / {formatSize(u.size)}
-                                </span>
-                              </div>
+                              )}
                             </div>
-                            <SpeedVisualizer history={u.speedHistory} className="mt-3" />
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 sm:mt-1">
+                              {u.status === 'encrypting' ? (
+                                <div className="flex items-center gap-1.5 text-cyan-400">
+                                  <Shield className="w-2.5 h-2.5" />
+                                  <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest whitespace-nowrap">
+                                    AES-256-GCM Direct Hardware Lock
+                                  </span>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-1.5">
+                                    <Zap className="w-2.5 h-2.5 text-accent" />
+                                    <span className="text-[8px] sm:text-[10px] font-bold text-accent uppercase tracking-widest whitespace-nowrap">
+                                      {formatSize(u.speed)}/s
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <Clock className="w-2.5 h-2.5 text-zinc-500" />
+                                    <span className="text-[8px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest whitespace-nowrap">
+                                      {u.status === 'completed' ? 'Finished' : `${formatTime(u.remaining)} left`}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <HardDrive className="w-2.5 h-2.5 text-zinc-500" />
+                                    <span className="text-[8px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest whitespace-nowrap">
+                                      {formatSize(u.loaded)} / {formatSize(u.size)}
+                                    </span>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            {u.status !== 'encrypting' && <SpeedVisualizer history={u.speedHistory} className="mt-3" />}
                           </div>
                         </div>
                         <div className="text-right shrink-0">
                           <div className="flex flex-col items-end">
-                            <span className="text-xl sm:text-2xl font-display font-black text-accent leading-none">
-                              {Math.round(u.progress)}%
+                            <span className={cn(
+                              "text-xl sm:text-2xl font-display font-black leading-none",
+                              u.status === 'encrypting' ? "text-cyan-400" :
+                              u.status === 'completed' ? "text-emerald-400" :
+                              "text-accent"
+                            )}>
+                              {u.status === 'encrypting' ? '100%' : `${Math.round(u.progress)}%`}
                             </span>
                             <span className={cn(
                               "text-[8px] font-bold uppercase tracking-[0.2em] mt-1",
+                              u.status === 'encrypting' ? "text-cyan-400 animate-pulse" :
                               u.status === 'uploading' ? "text-accent animate-pulse" : 
-                              u.status === 'completed' ? "text-emerald-500" : "text-red-500"
+                              u.status === 'completed' ? "text-emerald-400" : "text-amber-400"
                             )}>
-                              {u.status}
+                              {u.status === 'encrypting' ? 'SECURING (AES-256)' :
+                               u.status === 'completed' ? 'ENCRYPTED & SAVED' :
+                               u.status === 'uploading' ? 'UPLOADING' : 'SYNCING'}
                             </span>
                           </div>
                         </div>
@@ -3038,27 +3159,35 @@ export default function App() {
                       <div className="relative h-4 bg-white/5 rounded-full overflow-hidden border border-white/10 p-1 relative z-10">
                         <motion.div 
                           initial={{ width: 0 }}
-                          animate={{ width: `${u.progress}%` }}
-                          transition={{ type: "spring", stiffness: 50, damping: 20 }}
+                          animate={{ width: `${u.status === 'encrypting' ? 100 : u.progress}%` }}
+                          transition={{ type: "spring", stiffness: 60, damping: 20 }}
                           className={cn(
-                            "h-full rounded-full shadow-[0_0_15px_rgba(0,255,148,0.5)] transition-colors duration-500 relative overflow-hidden",
-                            u.status === 'completed' ? "bg-emerald-500 shadow-emerald-500/50" : "bg-accent"
+                            "h-full rounded-full transition-colors duration-500 relative overflow-hidden",
+                            u.status === 'encrypting' ? "bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.6)]" :
+                            u.status === 'completed' ? "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]" :
+                            "bg-accent shadow-[0_0_15px_rgba(0,255,148,0.5)]"
                           )} 
                         >
                           {/* Animated beam effect */}
-                          {u.status === 'uploading' && (
+                          {(u.status === 'uploading' || u.status === 'encrypting') && (
                             <motion.div 
                               animate={{ x: ['-100%', '200%'] }}
-                              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-1/2 skew-x-12"
+                              transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-1/2 skew-x-12"
                             />
                           )}
                         </motion.div>
                         
                         {/* Real-time status inside progress bar area */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <span className="text-[7px] sm:text-[8px] font-bold text-white/40 uppercase tracking-[0.2em]">
-                            {u.status === 'uploading' ? `${formatSize(u.speed)}/s • ${formatTime(u.remaining)} remaining` : u.status === 'completed' ? 'Transfer Complete' : 'Error'}
+                          <span className="text-[7px] sm:text-[8px] font-bold text-white/80 uppercase tracking-[0.2em] drop-shadow-sm">
+                            {u.status === 'encrypting'
+                              ? '🔒 Securing with AES-256-GCM Encryption...'
+                              : u.status === 'uploading'
+                              ? `${formatSize(u.speed)}/s • ${formatTime(u.remaining)} remaining`
+                              : u.status === 'completed'
+                              ? '🛡️ AES-256 Encrypted & Vault Secured'
+                              : 'Syncing Data...'}
                           </span>
                         </div>
                       </div>
@@ -3086,7 +3215,12 @@ export default function App() {
                       )}
                       
                       {/* Decorative background glow */}
-                      <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-accent/5 blur-3xl rounded-full pointer-events-none" />
+                      <div className={cn(
+                        "absolute -right-4 -bottom-4 w-24 h-24 blur-3xl rounded-full pointer-events-none transition-colors",
+                        u.status === 'encrypting' ? "bg-cyan-500/10" :
+                        u.status === 'completed' ? "bg-emerald-500/10" :
+                        "bg-accent/5"
+                      )} />
                     </motion.div>
                   ))}
 
@@ -3322,6 +3456,12 @@ export default function App() {
                                   <p className="text-[8px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-wider whitespace-nowrap">
                                     {formatSize(file.size)} • {format(new Date(file.createdAt), 'MMM d')}
                                   </p>
+                                  {file.isEncrypted !== false && (
+                                    <span className="inline-flex items-center gap-1 text-[7px] sm:text-[8px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                                      <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
+                                      AES-256 Encrypted
+                                    </span>
+                                  )}
                                   {file.tags && file.tags.length > 0 && (
                                     <div className="flex gap-1 overflow-hidden">
                                       {file.tags.slice(0, 2).map(tag => (
@@ -3608,7 +3748,15 @@ export default function App() {
                     <FileTypeIcon type={previewFile.type} />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-xs sm:text-sm font-bold truncate max-w-[150px] sm:max-w-md">{previewFile.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xs sm:text-sm font-bold truncate max-w-[150px] sm:max-w-md">{previewFile.name}</h3>
+                      {previewFile.isEncrypted !== false && (
+                        <span className="inline-flex items-center gap-1 text-[7px] sm:text-[8px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                          <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
+                          AES-256 Encrypted
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[8px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-widest truncate">{formatSize(previewFile.size)}</p>
                   </div>
                 </div>
@@ -4536,6 +4684,9 @@ export default function App() {
         id="global-file-upload-input"
         aria-label="Upload files"
       />
+
+      {/* Simple Clean Contact Us Email Footer */}
+      <SimpleContactFooter />
 
       {/* Terms and Conditions & Privacy Policy Legal Footer */}
       <LegalFooterModal 

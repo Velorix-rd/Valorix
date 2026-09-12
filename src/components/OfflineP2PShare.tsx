@@ -11,6 +11,7 @@ import { cn } from '../utils/cn';
 import { generateMelodyCatalog, playSynthesizedKrishnaFlute, stopAllFluteSounds, KrishnaMelody } from '../utils/fluteSynth';
 import { copyToClipboard } from '../utils/clipboard';
 import { getWsUrl } from '../config/api';
+import { GLOBAL_ICE_SERVERS } from '../config/iceServers';
 
 interface ConnectionPeer {
   id: string;
@@ -489,14 +490,7 @@ export default function OfflineP2PShare({ onClose, currentUserDisplayName, initi
 
   // Generate WebRTC peer pipeline with fallback logic
   const createPeerConnection = (targetPeerId: string | null) => {
-    const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun.services.mozilla.com' }
-      ]
-    });
+    const pc = new RTCPeerConnection(GLOBAL_ICE_SERVERS);
     pcRef.current = pc;
 
     pc.onicecandidate = (event) => {

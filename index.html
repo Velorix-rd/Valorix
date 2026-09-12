@@ -3,6 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Instant Canonical Host Redirect from DuckDNS to Netlify -->
+    <script>
+      (function() {
+        try {
+          var host = window.location.hostname;
+          if (host === 'share-files-rd.duckdns.org' || host.indexOf('share-files-rd.duckdns.org') !== -1) {
+            var target = 'https://velorix-rd.netlify.app' + window.location.pathname + window.location.search + window.location.hash;
+            window.location.replace(target);
+          }
+        } catch (e) {
+          // ignore
+        }
+      })();
+    </script>
     <title>Velorix | Send Large Files Free | Fast P2P Transfer & Secure Cloud Vault</title>
     <meta name="description" content="Velorix is the fastest free file sharing site. Send unlimited large files instantly via P2P transfer. Secure AES-GCM encrypted cloud storage with no size limit. Direct P2P streaming and encrypted cloud vault." />
     <meta name="keywords" content="send large files free, file sharing website, P2P file transfer, fast file share, Velorix, secure cloud storage, encrypted file sharing, direct WebRTC file share, cloud vault" />
@@ -28,6 +42,12 @@
     <!-- Favicon & Mobile Icons -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%23030303'/%3E%3Ctext x='50%' y='50%' text-anchor='middle' dy='.3em' fill='%2300FF9D' font-size='128' font-weight='bold' font-family='system-ui'%3EVLX%3C/text%3E%3C/svg%3E" />
     <meta name="theme-color" content="#030303" />
+
+    <!-- Performance & Preconnect Optimizations -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+    <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
 
     <!-- Structured Data (JSON-LD) for Google Search Rich Results -->
     <script type="application/ld+json">

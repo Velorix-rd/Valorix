@@ -50,6 +50,21 @@
         "path": { "type": "string", "description": "Current page path" }
       },
       "required": ["lastSeen"]
+    },
+    "ContactMessage": {
+      "title": "ContactMessage",
+      "description": "User direct contact message and feedback",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "User name" },
+        "email": { "type": "string", "description": "User email address" },
+        "subject": { "type": "string", "description": "Subject of the message" },
+        "message": { "type": "string", "description": "Detailed message or comment" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when submitted" },
+        "status": { "type": "string", "description": "Read status" },
+        "targetAdmin": { "type": "string", "description": "Target admin email" }
+      },
+      "required": ["message", "createdAt"]
     }
   },
   "firestore": {
@@ -68,6 +83,10 @@
     "/presence/{sessionId}": {
       "schema": "Presence",
       "description": "Active user sessions"
+    },
+    "/contact_messages/{messageId}": {
+      "schema": "ContactMessage",
+      "description": "Direct user messages and comments for rd8538689@gmail.com"
     }
   }
 }
