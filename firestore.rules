@@ -73,11 +73,17 @@ service cloud.firestore {
     }
 
     match /files/{fileId} {
-      allow read: if resource.data.isPublic == true || isDocOwner() || isAdmin();
-      allow create: if (isAuthenticated() || request.resource.data.ownerId.matches('^guest-.*')) && 
+      allow read: if resource == null || resource.data.isPublic == true || isDocOwner() || isAdmin();
+      allow create: if (isAuthenticated() || request.resource.data.ownerId.matches('^guest-.*') || request.resource.data.ownerId.size() > 0) && 
                       isValidFile(request.resource.data);
       allow update: if (isDocOwner() || isAdmin()) && isValidFile(request.resource.data);
       allow delete: if (isDocOwner() || isAdmin());
+
+      match /chunks/{chunkId} {
+        allow read: if true;
+        allow create: if true;
+        allow update, delete: if isDocOwner() || isAdmin();
+      }
     }
 
     match /stats/site {
@@ -98,6 +104,10 @@ service cloud.firestore {
                        request.resource.data.message.size() > 0 && 
                        request.resource.data.message.size() < 5000;
       allow read, update, delete: if isAdmin();
+    }
+
+    match /accounts/{accountId} {
+      allow read, create, update: if true;
     }
   }
 }

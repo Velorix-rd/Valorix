@@ -2,14 +2,49 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Velorix</title>
-    <script>
-      // Single Page Apps for GitHub Pages
-      // Redirects 404 queries to index.html preserving path
-      sessionStorage.redirect = location.href;
+    <title>Velorix | Secure File Transfer</title>
+    <script type="text/javascript">
+      // GitHub Pages SPA Routing Handler for Velorix
+      (function() {
+        try {
+          var loc = window.location;
+          var path = loc.pathname;
+          var origin = loc.origin;
+
+          // Check if path contains /share/:id
+          var shareMatch = path.match(//share/([a-zA-Z0-9_-]+)/i);
+          var shareId = shareMatch ? shareMatch[1] : null;
+
+          if (shareId) {
+            sessionStorage.setItem('velorix_share_id', shareId);
+            try { localStorage.setItem('velorix_last_share_id', shareId); } catch (e) {}
+          }
+
+          sessionStorage.setItem('velorix_redirect_url', loc.href);
+
+          // Detect repository subpath (e.g. /Valorix/ or /velorix/)
+          var segments = path.split('/').filter(Boolean);
+          var hasRepoPrefix = segments.length > 0 && (segments[0].toLowerCase() === 'valorix' || segments[0].toLowerCase() === 'velorix');
+          var basePath = hasRepoPrefix ? '/' + segments[0] : '';
+
+          // Redirect to index.html with clean query parameters
+          var redirectTarget = origin + basePath + '/?' + 
+            (shareId ? 'share=' + encodeURIComponent(shareId) + '&' : '') +
+            'p=' + encodeURIComponent(path + loc.search + loc.hash);
+
+          window.location.replace(redirectTarget);
+        } catch (err) {
+          // Fallback redirect
+          window.location.replace('/');
+        }
+      })();
     </script>
-    <meta http-equiv="refresh" content="0;URL='./'">
   </head>
-  <body>
+  <body style="background:#030303;color:#00FF9D;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+    <div style="text-align:center;">
+      <div style="width:36px;height:36px;border:3px solid rgba(0,255,157,0.2);border-top-color:#00FF9D;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;"></div>
+      <p style="font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Redirecting to Velorix...</p>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
   </body>
 </html>

@@ -22,10 +22,33 @@
     <!-- GitHub Pages SPA Redirect Handler -->
     <script>
       (function() {
-        var redirect = sessionStorage.redirect;
-        delete sessionStorage.redirect;
-        if (redirect && redirect !== location.href) {
-          history.replaceState(null, null, redirect);
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var shareParam = params.get('share') || params.get('file') || params.get('id');
+          if (shareParam) {
+            sessionStorage.setItem('velorix_share_id', shareParam);
+            try { localStorage.setItem('velorix_last_share_id', shareParam); } catch (e) {}
+          }
+          var pParam = params.get('p');
+          if (pParam) {
+            var decodedPath = decodeURIComponent(pParam);
+            var m = decodedPath.match(/\/share\/([a-zA-Z0-9_-]+)/i);
+            if (m && m[1]) {
+              sessionStorage.setItem('velorix_share_id', m[1]);
+              try { localStorage.setItem('velorix_last_share_id', m[1]); } catch (e) {}
+            }
+            // Restore clean path in browser address bar
+            window.history.replaceState(null, null, decodedPath);
+          }
+          var redirect = sessionStorage.redirect;
+          if (redirect) {
+            delete sessionStorage.redirect;
+            if (redirect !== location.href) {
+              window.history.replaceState(null, null, redirect);
+            }
+          }
+        } catch (err) {
+          // ignore
         }
       })();
     </script>

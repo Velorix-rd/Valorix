@@ -237,11 +237,11 @@ export default function OppoFileDock({ onSendP2P, onUploadToVault, cloudFilesCou
       </AnimatePresence>
 
       {/* 2. Custom Slide-out Oppo Smart Sidebar Handle */}
-      <div className="fixed right-0 top-1/3 z-[80]">
+      <div className="fixed right-0 top-1/3 z-[80] pointer-events-auto">
         {!isOpen && (
           <motion.button
             onClick={() => setIsOpen(true)}
-            initial={{ x: 20 }}
+            initial={{ x: 0 }}
             animate={{ x: 0 }}
             whileHover={{ x: -4 }}
             className="flex items-center gap-2 bg-[#0e0e11]/80 backdrop-blur-xl border border-r-0 border-white/10 pl-2 pr-3 py-6 rounded-l-2xl shadow-xl border-y-white/5 transition-all outline-none cursor-pointer group"
