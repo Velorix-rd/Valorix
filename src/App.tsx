@@ -166,6 +166,20 @@ interface FileMetadata {
   dataUrl?: string;
 }
 
+export function cleanFirestoreObject<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (val !== undefined) {
+      if (val !== null && typeof val === 'object' && !(val instanceof Date) && !Array.isArray(val)) {
+        result[key] = cleanFirestoreObject(val);
+      } else {
+        result[key] = val;
+      }
+    }
+  }
+  return result;
+}
+
 export function getShareIdFromLocation(): string | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -809,6 +823,34 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
           }
           if (!isCancelled) setLoading(false);
           return;
+        }
+
+        // 1b. Fallback: Check backend server download endpoint
+        try {
+          const downloadUrlCandidate = getApiUrl(`/api/download/${cleanShareId}`);
+          const backendCheck = await fetch(downloadUrlCandidate, { method: 'HEAD' });
+          if (backendCheck.ok && !isCancelled) {
+            const filename = cleanShareId.includes('-') ? cleanShareId.split('-').slice(2).join('-') || cleanShareId : cleanShareId;
+            const size = parseInt(backendCheck.headers.get('content-length') || '0', 10);
+            const type = backendCheck.headers.get('content-type') || 'application/octet-stream';
+
+            const serverFile: FileMetadata = {
+              id: cleanShareId,
+              name: filename,
+              size: size,
+              type: type,
+              ownerId: 'server',
+              downloadUrl: downloadUrlCandidate,
+              isPublic: true,
+              createdAt: new Date().toISOString()
+            };
+
+            setFile(serverFile);
+            setLoading(false);
+            return;
+          }
+        } catch (backendErr) {
+          console.warn('Backend HEAD check skipped:', backendErr);
         }
 
         // 2. Fallback: check local storage and IndexedDB
@@ -2736,7 +2778,9 @@ export default function App() {
 
       // Always sync file metadata to Firestore so ANY user or recipient anywhere can access/download it!
       try {
-        await setDoc(doc(db, 'files', resolvedId), fileMetadata);
+        const cleanedMetadata = cleanFirestoreObject(fileMetadata);
+        await setDoc(doc(db, 'files', resolvedId), cleanedMetadata);
+        console.log('Successfully synced file metadata to Firestore:', resolvedId);
       } catch (err) {
         console.warn('Could not sync file metadata to Firestore:', err);
       }
