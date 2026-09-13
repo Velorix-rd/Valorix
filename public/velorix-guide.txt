@@ -1,0 +1,86 @@
+================================================================================
+                    VELORIX: FILE SHARING MADE SUPER SIMPLE
+================================================================================
+
+1. HOW IT WORKS & WHY IT'S 100% SAFE
+--------------------------------------------------------------------------------
+Most people worry about two things when sending files online:
+- "Can someone peek at my photos or videos?"
+- "Where is my data being stored?"
+
+Here is how Velorix protects you:
+
+* THE DIGITAL SAFE (AES ENCRYPTION):
+  - Imagine putting your file into a heavy steel safe right inside your phone or laptop.
+  - Your file gets locked BEFORE it even leaves your screen.
+  - The only key to open that safe is hidden inside the link you share with your friend.
+  - Even if someone intercepts the link or checks the servers, all they see is scrambled,
+    meaningless static. We cannot open or view your files even if we wanted to!
+
+* DIRECT DEVICE-TO-DEVICE TRANSFER (P2P):
+  - Instead of uploading your file to a big company's warehouse first, Velorix connects
+    an invisible high-speed bridge straight from your phone to your friend's computer.
+  - Your file flows directly from you to them.
+  - Because it never sits on a middleman server, you get NO FILE SIZE LIMITS
+    (send 10 GB, 50 GB, or 100 GB) and MAXIMUM download speed.
+
+* EASY & SAFE GOOGLE SIGN-IN:
+  - You don't need to invent or remember a new password.
+  - Sign in safely with your regular Google account in one click. We never see or
+    store your Google password.
+
+
+2. WHY BIG COMPANIES (GOOGLE DRIVE, MEDIAFIRE) DON'T DO THIS
+--------------------------------------------------------------------------------
+* GOOGLE DRIVE & MEDIAFIRE STORE EVERYTHING:
+  When you upload to Google Drive or MediaFire, your file stays on their hard drives
+  forever. Their computers scan your files so they can show previews, run copyright
+  checks, and track data.
+
+* THEIR GOAL IS SUBSCRIPTIONS & ADS:
+  - Google gives you 15 GB so that when it fills up, you have to pay a monthly subscription.
+  - MediaFire bombards you with 10 annoying pop-up ads and fake "Download" buttons to make money.
+
+* WHY BIG COMPANIES CAN'T DO WHAT VELORIX DOES:
+  If Google locked your files so that only YOU held the key, their automated search and
+  preview features wouldn't work. More importantly, they couldn't push you to buy bigger
+  paid storage plans!
+
+
+3. THE TRUTH ABOUT OUR WEB ADDRESS (DOMAIN)
+--------------------------------------------------------------------------------
+* WE PUT YOU FIRST, NOT FANCY NAMES:
+  Buying a fancy .com name costs extra money every year. Right now, every bit of effort
+  and budget goes straight into speed, top-notch security, and keeping this service 100%
+  free for you.
+
+* WORLD-CLASS ENGINE BEHIND IT:
+  Velorix runs on the exact same global systems used by major tech projects (GitHub & Cloudflare).
+  It is lightning-fast, ultra-secure, and stays online 24/7.
+
+* TRUST IS IN THE RESULTS:
+  A flashy .com name doesn't make an app safe. What matters is that your files transfer fast,
+  completely clean, with zero viruses, zero ads, and zero fees. (As our community grows,
+  the .com will come naturally!)
+
+
+4. WHY YOU SHOULD USE VELORIX (THE BIG PERKS)
+--------------------------------------------------------------------------------
+1. TRULY UNLIMITED & ALWAYS FREE: No 2 GB cutoffs. No monthly fee surprises.
+2. NO SIGN-UP NEEDED: Just open the website, drop your file, copy the link, and you are done!
+3. CLEAN & VIRUS-FREE: No fake download buttons. No spam ads. One click gets you your file.
+4. INSTANT SPEED: Your friend starts receiving the file right away without waiting around for hours.
+
+
+5. SIMPLE SCRIPT FOR INSTAGRAM / TIKTOK / YOUTUBE REELS
+--------------------------------------------------------------------------------
+[0-5 Sec] Hook: "Google Drive saying 'Storage Full' again? WeTransfer asking for a paid subscription?"
+[5-15 Sec] Problem: "You just want to send a big 20 GB video or game file to your friend, but every website wants your credit card or email."
+[15-25 Sec] The Fix: "Check out Velorix! Just open the site, drag your file in, and copy the link. No accounts, no size limits, and your file sends straight to their device with military-grade privacy."
+[25-30 Sec] Call to Action: "100% free forever. Try it right now on Velorix!"
+
+--------------------------------------------------------------------------------
+THE ONE-SENTENCE PITCH TO TELL YOUR FRIENDS:
+"Need to send a huge file fast without paying for Google Drive or dealing with sketchy ads?
+Use Velorix - just drop it, send the link, and it transfers completely free with zero limits!"
+================================================================================
