@@ -423,7 +423,7 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({ isOpen, onClos
             </div>
           )}
 
-          {/* TAB 2: DUCKDNS AUTO-SYNC HELPER */}
+          {/* TAB 2: SERVER AUTO-SYNC HELPER */}
           {activeTab === 'webhook' && (
             <div className="space-y-4">
               <div className="p-4 rounded-2xl bg-zinc-900 border border-white/5 space-y-2">
