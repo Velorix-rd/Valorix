@@ -3241,6 +3241,7 @@ export default function App() {
       addActivity('share', shareFile?.name || 'File');
     } catch (err) {
       console.error('Failed to set expiry date', err);
+      handleFirestoreError(err, OperationType.UPDATE, `files/${fileId}`);
     }
   };
 
@@ -3253,6 +3254,7 @@ export default function App() {
       addActivity('share', shareFile?.name || 'File');
     } catch (err) {
       console.error('Failed to set password', err);
+      handleFirestoreError(err, OperationType.UPDATE, `files/${fileId}`);
     }
   };
 

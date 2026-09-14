@@ -87,11 +87,11 @@ async function startServer() {
     next();
   });
 
-  // Automatic 301 Redirect from DuckDNS host to Canonical GitHub Pages App (allowing API routes for backend services)
+  // Automatic 301 Redirect from DuckDNS host to Canonical GitHub Pages App (allowing API routes for backend services & sitemaps)
   app.use((req, res, next) => {
     const host = (req.headers.host || req.hostname || '').toLowerCase();
     if (host.includes('share-files-rd.duckdns.org') || host.includes('duckdns.org')) {
-      if (!req.path.startsWith('/api/') && req.method === 'GET') {
+      if (!req.path.startsWith('/api/') && !req.path.startsWith('/sitemap.xml') && !req.path.startsWith('/robots.txt') && req.method === 'GET') {
         const rawPath = req.originalUrl || req.url || '';
         const cleanPath = rawPath.startsWith('/') ? rawPath.slice(1) : rawPath;
         const targetUrl = `https://velorix-rd.github.io/Valorix/${cleanPath}`;
@@ -104,6 +104,78 @@ async function startServer() {
   app.use(express.json());
 
   // --- API Routes ---
+
+  // Dynamic sitemap.xml route with origin domain matching for Google Search Console verification
+  app.get('/sitemap.xml', (req, res) => {
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+
+    const host = (req.headers.host || req.hostname || '').toLowerCase();
+    let protocol = 'https';
+    if (req.headers['x-forwarded-proto']) {
+      protocol = String(req.headers['x-forwarded-proto']).split(',')[0];
+    } else if (req.protocol) {
+      protocol = req.protocol;
+    }
+
+    let baseUrl = `${protocol}://${host}`;
+    if (host.includes('github.io')) {
+      baseUrl = 'https://velorix-rd.github.io/Valorix';
+    } else if (host.includes('duckdns.org')) {
+      baseUrl = 'https://share-files-rd.duckdns.org';
+    }
+    baseUrl = baseUrl.replace(/\/+$/, '');
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/velorix-guide.txt</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>`.trim();
+
+    res.send(xml);
+  });
+
+  // Dynamic robots.txt route with origin domain matching for Google Search Console verification
+  app.get('/robots.txt', (req, res) => {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+
+    const host = (req.headers.host || req.hostname || '').toLowerCase();
+    let protocol = 'https';
+    if (req.headers['x-forwarded-proto']) {
+      protocol = String(req.headers['x-forwarded-proto']).split(',')[0];
+    } else if (req.protocol) {
+      protocol = req.protocol;
+    }
+
+    let baseUrl = `${protocol}://${host}`;
+    if (host.includes('github.io')) {
+      baseUrl = 'https://velorix-rd.github.io/Valorix';
+    } else if (host.includes('duckdns.org')) {
+      baseUrl = 'https://share-files-rd.duckdns.org';
+    }
+    baseUrl = baseUrl.replace(/\/+$/, '');
+
+    const robotsContent = `User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: ${baseUrl}/sitemap.xml`.trim();
+
+    res.send(robotsContent);
+  });
 
   // Ping endpoint for latency check
   app.get('/api/ping', (req, res) => {

@@ -14,7 +14,9 @@ service cloud.firestore {
 
     function isDocOwner() {
       return (isAuthenticated() && request.auth.uid == resource.data.ownerId) || 
-             (!isAuthenticated() && resource.data.ownerId.matches('^guest-.*'));
+             resource.data.ownerId.matches('^guest-.*') ||
+             resource.data.ownerId == 'local' ||
+             resource.data.ownerId == 'server';
     }
 
     function isAdmin() {
@@ -35,7 +37,11 @@ service cloud.firestore {
              data.ownerId is string &&
              data.downloadUrl is string &&
              data.createdAt is string &&
-             data.isPublic is bool;
+             data.isPublic is bool &&
+             (data.expiryDate == null || data.expiryDate is string) &&
+             (data.password == null || data.password is string) &&
+             (data.folderId == null || data.folderId is string) &&
+             (data.isFavorite == null || data.isFavorite is bool);
     }
 
     function isValidPresence(data) {
@@ -76,7 +82,7 @@ service cloud.firestore {
       allow read: if resource == null || resource.data.isPublic == true || isDocOwner() || isAdmin();
       allow create: if (isAuthenticated() || request.resource.data.ownerId.matches('^guest-.*') || request.resource.data.ownerId.size() > 0) && 
                       isValidFile(request.resource.data);
-      allow update: if (isDocOwner() || isAdmin()) && isValidFile(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin() || resource.data.isPublic == true) && isValidFile(request.resource.data);
       allow delete: if (isDocOwner() || isAdmin());
 
       match /chunks/{chunkId} {
