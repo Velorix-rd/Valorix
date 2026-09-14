@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 permissions:
@@ -20,17 +20,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Node
+
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install dependencies
-        run: npm install
-      - name: Build project
-        run: npm run build
+          cache: 'npm'
 
-      - name: Add .nojekyll to prevent Jekyll filtering
+      - name: Install dependencies
+        run: npm install --include=dev
+
+      - name: Build Web App for Pages
+        run: npx vite build
+
+      - name: Add .nojekyll
         run: touch dist/.nojekyll
+
+      - name: Copy 404 fallback
+        run: cp dist/index.html dist/404.html || true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
