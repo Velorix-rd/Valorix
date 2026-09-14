@@ -184,7 +184,7 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({ isOpen, onClos
                   </span>
                 )}
               </div>
-              <p className="text-xs text-zinc-400">Sync vault backups, repository branches & automate DuckDNS self-host</p>
+              <p className="text-xs text-zinc-400">Sync vault backups, repository branches & automate server auto-sync</p>
             </div>
           </div>
           <button 
@@ -217,7 +217,7 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({ isOpen, onClos
             }`}
           >
             <Terminal className="w-4 h-4" />
-            Auto-Sync Script (DuckDNS)
+            Auto-Sync Script
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -429,7 +429,7 @@ export const GitHubSyncModal: React.FC<GitHubSyncModalProps> = ({ isOpen, onClos
               <div className="p-4 rounded-2xl bg-zinc-900 border border-white/5 space-y-2">
                 <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
                   <Zap className="w-4 h-4" />
-                  <span>DuckDNS / Server 1-Line Auto-Sync Command</span>
+                  <span>Server 1-Line Auto-Sync Command</span>
                 </div>
                 <p className="text-xs text-zinc-400">
                   Run this single command on your PC / Linux VPS to automatically sync new code from GitHub and restart the server without downtime:

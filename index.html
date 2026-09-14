@@ -3,22 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Instant Canonical Host Redirect from DuckDNS to GitHub Pages -->
-    <script>
-      (function() {
-        try {
-          var host = window.location.hostname;
-          if (host === 'share-files-rd.duckdns.org' || host.indexOf('duckdns.org') !== -1) {
-            var targetPath = window.location.pathname;
-            if (targetPath.startsWith('/')) targetPath = targetPath.slice(1);
-            var targetUrl = 'https://velorix-rd.github.io/Valorix/' + (targetPath ? targetPath : '') + window.location.search + window.location.hash;
-            window.location.replace(targetUrl);
-          }
-        } catch (e) {
-          // ignore
-        }
-      })();
-    </script>
     <!-- GitHub Pages SPA Redirect Handler -->
     <script>
       (function() {
@@ -144,7 +128,7 @@
         },
         {
           "@type": "FAQPage",
-          "@id": "https://share-files-rd.duckdns.org/#faq",
+          "@id": "https://velorix-rd.github.io/Valorix/#faq",
           "mainEntity": [
             {
               "@type": "Question",

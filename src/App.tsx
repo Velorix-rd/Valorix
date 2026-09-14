@@ -1030,7 +1030,7 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
       }
     }
 
-    // 4. Download with 3-Tier Multi-Gateway Streaming (Primary -> DuckDNS Relay -> Firestore Chunks)
+    // 4. Download with 3-Tier Multi-Gateway Streaming (Primary -> Server Relay -> Firestore Chunks)
     try {
       let loaded = 0;
       let lastUpdateUI = 0;
@@ -1501,7 +1501,6 @@ export default function App() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
   const [liveUsersInfo, setLiveUsersInfo] = useState<{ real: number, fake: number }>({ real: 1, fake: 186 });
-  const [duckDnsViews, setDuckDnsViews] = useState<number | null>(null);
 
   const [userName, setUserName] = useState<string | null>(safeStorage.getItem('user_display_name') || 'Guest User');
   const [showNamePrompt, setShowNamePrompt] = useState(false);
@@ -1694,89 +1693,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    let checkInterval: any;
-
-    const fetchDuckDnsViews = async () => {
-      try {
-        const statsRef = doc(db, 'stats', 'site');
-        const snap = await getDoc(statsRef);
-        let baseViews = 0;
-        if (snap.exists()) {
-          baseViews = snap.data().duckDnsViews || 0;
-        }
-
-        // Check if we need to increment based on host and session
-        const isDuckDns = window.location.hostname === 'share-files-rd.duckdns.org';
-        const hasTrackedView = safeSessionStorage.getItem('duckdns_view_tracked');
-
-        if (isDuckDns && !hasTrackedView) {
-          baseViews += 1;
-          await updateDoc(statsRef, { duckDnsViews: baseViews });
-          safeSessionStorage.setItem('duckdns_view_tracked', 'true');
-        }
-
-        // --- Randomization Logic ---
-        let storedViewsStr = safeStorage.getItem('duckdns_random_views');
-        let storedTimeStr = safeStorage.getItem('duckdns_random_views_time');
-        let nextIntervalStr = safeStorage.getItem('duckdns_random_views_interval');
-        
-        let storedViews = storedViewsStr ? parseInt(storedViewsStr, 10) : 0;
-        let storedTime = storedTimeStr ? parseInt(storedTimeStr, 10) : Date.now();
-        
-        const generateRandomInterval = () => {
-          const minMs = 15 * 60 * 1000;
-          const maxMs = 34 * 60 * 1000;
-          return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
-        };
-
-        let nextInterval = nextIntervalStr ? parseInt(nextIntervalStr, 10) : generateRandomInterval();
-
-        const saveToLocalStorage = (views: number, time: number, interval: number) => {
-          safeStorage.setItem('duckdns_random_views', views.toString());
-          safeStorage.setItem('duckdns_random_views_time', time.toString());
-          safeStorage.setItem('duckdns_random_views_interval', interval.toString());
-        };
-
-        if (isNaN(storedViews) || storedViews < baseViews) {
-          // Initialize if it doesn't exist or base is higher
-          storedViews = baseViews + Math.floor(Math.random() * 200) + 50; 
-          storedTime = Date.now();
-          nextInterval = generateRandomInterval();
-          saveToLocalStorage(storedViews, storedTime, nextInterval);
-        }
-
-        const updateRandomViews = () => {
-          const now = Date.now();
-          const elapsed = now - storedTime;
-
-          if (elapsed >= nextInterval) {
-            // Jump randomly by e.g. 34+, 47+, 70+
-            const jump = Math.floor(Math.random() * 50) + 34;
-            storedViews += jump;
-            storedTime = now;
-            nextInterval = generateRandomInterval();
-            saveToLocalStorage(storedViews, storedTime, nextInterval);
-          }
-          setDuckDnsViews(storedViews);
-        };
-
-        // Initial update and state set
-        updateRandomViews();
-
-        // Periodic check
-        checkInterval = setInterval(updateRandomViews, 60000); // Check every minute
-      } catch (err) {
-        console.error('Failed to handle duckdns views:', err);
-      }
-    };
-    fetchDuckDnsViews();
-
-    return () => {
-      if (checkInterval) clearInterval(checkInterval);
-    };
-  }, []);
-
-  useEffect(() => {
     const handleScroll = () => {
       const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
       const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
@@ -1819,19 +1735,6 @@ export default function App() {
       }
     }
   }, [user, userName]);
-
-  useEffect(() => {
-    try {
-      const host = window.location.hostname;
-      if (host === 'share-files-rd.duckdns.org' || host.includes('duckdns.org')) {
-        const rawPath = window.location.pathname;
-        const cleanPath = rawPath.startsWith('/') ? rawPath.slice(1) : rawPath;
-        window.location.replace(`https://velorix-rd.github.io/Valorix/${cleanPath}${window.location.search}${window.location.hash}`);
-      }
-    } catch (e) {
-      // ignore
-    }
-  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {

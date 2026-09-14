@@ -3,4 +3,3 @@ Allow: /
 Disallow: /api/
 
 Sitemap: https://velorix-rd.github.io/Valorix/sitemap.xml
-Sitemap: https://share-files-rd.duckdns.org/sitemap.xml
