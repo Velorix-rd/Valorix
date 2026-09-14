@@ -96,7 +96,19 @@ async function startServer() {
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=3600');
 
-    const baseUrl = 'https://velorix-rd.github.io/Valorix';
+    const host = (req.headers.host || req.hostname || '').toLowerCase();
+    let protocol = 'https';
+    if (req.headers['x-forwarded-proto']) {
+      protocol = String(req.headers['x-forwarded-proto']).split(',')[0];
+    } else if (req.protocol) {
+      protocol = req.protocol;
+    }
+
+    let baseUrl = 'https://velorix-rd.github.io/Valorix';
+    if (host && !host.includes('github.io')) {
+      baseUrl = `${protocol}://${host}`;
+    }
+    baseUrl = baseUrl.replace(/\/+$/, '');
     const today = new Date().toISOString().split('T')[0];
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -106,6 +118,12 @@ async function startServer() {
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/share/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>always</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>${baseUrl}/velorix-guide.txt</loc>
@@ -123,7 +141,20 @@ async function startServer() {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=3600');
 
-    const baseUrl = 'https://velorix-rd.github.io/Valorix';
+    const host = (req.headers.host || req.hostname || '').toLowerCase();
+    let protocol = 'https';
+    if (req.headers['x-forwarded-proto']) {
+      protocol = String(req.headers['x-forwarded-proto']).split(',')[0];
+    } else if (req.protocol) {
+      protocol = req.protocol;
+    }
+
+    let baseUrl = 'https://velorix-rd.github.io/Valorix';
+    if (host && !host.includes('github.io')) {
+      baseUrl = `${protocol}://${host}`;
+    }
+    baseUrl = baseUrl.replace(/\/+$/, '');
+
     const robotsContent = `User-agent: *
 Allow: /
 Disallow: /api/
