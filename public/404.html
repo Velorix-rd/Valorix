@@ -8,11 +8,11 @@
       (function() {
         try {
           var loc = window.location;
-          var path = loc.pathname;
-          var origin = loc.origin;
+          var path = loc.pathname || '';
+          var origin = loc.origin || '';
 
           // Check if path contains /share/:id
-          var shareMatch = path.match(//share/([a-zA-Z0-9_-]+)/i);
+          var shareMatch = path.match(/\/share\/([a-zA-Z0-9_-]+)/i);
           var shareId = shareMatch ? shareMatch[1] : null;
 
           if (shareId) {
@@ -25,7 +25,7 @@
           // Detect repository subpath (e.g. /Valorix/ or /velorix/)
           var segments = path.split('/').filter(Boolean);
           var hasRepoPrefix = segments.length > 0 && (segments[0].toLowerCase() === 'valorix' || segments[0].toLowerCase() === 'velorix');
-          var basePath = hasRepoPrefix ? '/' + segments[0] : '';
+          var basePath = hasRepoPrefix ? '/' + segments[0] : (path.indexOf('/Valorix') !== -1 ? '/Valorix' : '');
 
           // Redirect to index.html with clean query parameters
           var redirectTarget = origin + basePath + '/?' + 
@@ -34,8 +34,9 @@
 
           window.location.replace(redirectTarget);
         } catch (err) {
-          // Fallback redirect
-          window.location.replace('/');
+          // Fallback redirect preserving repository path
+          var repoPath = window.location.pathname.indexOf('/Valorix') !== -1 ? '/Valorix/' : './';
+          window.location.replace(repoPath);
         }
       })();
     </script>
@@ -43,7 +44,7 @@
   <body style="background:#030303;color:#00FF9D;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
     <div style="text-align:center;">
       <div style="width:36px;height:36px;border:3px solid rgba(0,255,157,0.2);border-top-color:#00FF9D;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;"></div>
-      <p style="font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Redirecting to Velorix...</p>
+      <p style="font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Loading Velorix...</p>
     </div>
     <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
   </body>

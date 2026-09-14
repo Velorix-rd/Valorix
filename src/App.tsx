@@ -91,7 +91,9 @@ import {
   ShieldCheck,
   Database,
   ExternalLink,
-  Link2
+  Link2,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
@@ -233,6 +235,16 @@ export function getShareIdFromLocation(): string | null {
     console.warn('Error extracting shareId from location:', e);
   }
   return null;
+}
+
+export function getPublicShareUrl(fileId: string): string {
+  if (typeof window === 'undefined') return `/share/${fileId}`;
+  const origin = window.location.origin;
+  const isGitHubPages = window.location.hostname.includes('github.io') || window.location.pathname.toLowerCase().includes('/valorix');
+  if (isGitHubPages) {
+    return `https://velorix-rd.github.io/Valorix/#/share/${fileId}`;
+  }
+  return `${origin}/share/${fileId}`;
 }
 
 export async function uploadFileChunksToFirestore(fileId: string, blob: Blob): Promise<boolean> {
@@ -715,7 +727,8 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
     if (onBackHome) {
       onBackHome();
     } else {
-      window.location.href = '/';
+      const isGitHubPages = window.location.pathname.toLowerCase().includes('/valorix');
+      window.location.href = isGitHubPages ? '/Valorix/' : './';
     }
   };
 
@@ -725,7 +738,9 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
     let target = customShareCode.trim();
     const match = target.match(/\/share\/([a-zA-Z0-9_-]+)/i);
     if (match && match[1]) target = match[1];
-    window.location.href = `/share/${target}`;
+    const isGitHubPages = window.location.pathname.toLowerCase().includes('/valorix');
+    const base = isGitHubPages ? '/Valorix/#/share/' : '/#/share/';
+    window.location.href = `${base}${target}`;
   };
 
   useEffect(() => {
@@ -1276,7 +1291,10 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
       <header className="px-6 h-20 flex items-center justify-between border-b border-white/5">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => window.location.href = '/'}
+            onClick={() => {
+              const isGitHubPages = window.location.pathname.toLowerCase().includes('/valorix');
+              window.location.href = isGitHubPages ? '/Valorix/' : './';
+            }}
             className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-zinc-500 hover:text-white transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -1513,6 +1531,23 @@ export default function App() {
   const [showOfflineShare, setShowOfflineShare] = useState(false);
   const [initialP2pFile, setInitialP2pFile] = useState<File | null>(null);
   const [showOnlineShareModal, setShowOnlineShareModal] = useState(false);
+
+  const [vaultViewMode, setVaultViewMode] = useState<'grid' | 'list'>(() => {
+    try {
+      return (safeStorage.getItem('velorix_vault_view_mode') as 'grid' | 'list') || 'grid';
+    } catch {
+      return 'grid';
+    }
+  });
+
+  const handleSetVaultViewMode = (mode: 'grid' | 'list') => {
+    setVaultViewMode(mode);
+    try {
+      safeStorage.setItem('velorix_vault_view_mode', mode);
+    } catch (e) {
+      console.warn('Failed to save vault view mode preference:', e);
+    }
+  };
 
   const [folders, setFolders] = useState<FolderMetadata[]>([]);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
@@ -4267,7 +4302,7 @@ export default function App() {
                             <button
                               onClick={async (e) => {
                                 e.stopPropagation();
-                                const shareUrl = `${window.location.origin}/share/${u.id}`;
+                                const shareUrl = getPublicShareUrl(u.id);
                                 const success = await copyToClipboard(shareUrl);
                                 if (success) {
                                   setLinkCopied(true);
@@ -4485,15 +4520,47 @@ export default function App() {
                           </button>
                         )}
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+                        {/* List / Grid View Toggle */}
+                        <div className="flex items-center bg-white/5 border border-white/10 p-0.5 rounded-xl shadow-inner">
+                          <button 
+                            id="vault-view-grid-btn"
+                            onClick={() => handleSetVaultViewMode('grid')}
+                            className={cn(
+                              "p-1.5 px-2.5 rounded-lg transition-all flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
+                              vaultViewMode === 'grid'
+                                ? "bg-accent text-black shadow-[0_0_12px_rgba(0,255,157,0.35)]"
+                                : "text-zinc-400 hover:text-white"
+                            )}
+                            title="Grid View"
+                          >
+                            <LayoutGrid className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Grid</span>
+                          </button>
+                          <button 
+                            id="vault-view-list-btn"
+                            onClick={() => handleSetVaultViewMode('list')}
+                            className={cn(
+                              "p-1.5 px-2.5 rounded-lg transition-all flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
+                              vaultViewMode === 'list'
+                                ? "bg-accent text-black shadow-[0_0_12px_rgba(0,255,157,0.35)]"
+                                : "text-zinc-400 hover:text-white"
+                            )}
+                            title="List View"
+                          >
+                            <List className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">List</span>
+                          </button>
+                        </div>
+
                         <button 
                           onClick={() => setShowNewFolderModal(true)}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group"
+                          className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group shrink-0"
                         >
                           <Plus className="w-3.5 h-3.5 text-accent group-hover:scale-110 transition-transform" />
                           <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">New Folder</span>
                         </button>
-                        <span className="text-[10px] text-zinc-600 font-bold">{filteredFiles.length} Items</span>
+                        <span className="text-[10px] text-zinc-600 font-bold whitespace-nowrap hidden xs:inline">{filteredFiles.length} Items</span>
                       </div>
                     </div>
                   </div>
@@ -4508,6 +4575,246 @@ export default function App() {
                       <Folder className="w-12 h-12 text-zinc-800 mx-auto mb-4" />
                       <p className="text-zinc-600 font-medium">Your vault is empty. <br /> Start by uploading some fire files! 🔥</p>
                     </motion.div>
+                  ) : vaultViewMode === 'list' ? (
+                    <div className="flex flex-col gap-2">
+                      {/* Desktop List Header */}
+                      <div className="hidden md:flex items-center justify-between px-4 py-2 text-[9px] font-bold text-zinc-500 uppercase tracking-widest border-b border-white/5">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <span className="w-5"></span>
+                          <span className="w-8"></span>
+                          <span>File Name</span>
+                        </div>
+                        <div className="flex items-center gap-6 shrink-0 pr-2">
+                          <span className="w-20 text-right">Size</span>
+                          <span className="w-24 text-center">Date</span>
+                          <span className="w-48 text-right">Actions</span>
+                        </div>
+                      </div>
+
+                      {filteredFiles.map((file, idx) => (
+                        <motion.div 
+                          key={file.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.02 }}
+                          draggable
+                          onDragStart={(e: any) => {
+                            const filesToMove = selectedFiles.includes(file.id) && selectedFiles.length > 0 
+                              ? selectedFiles 
+                              : [file.id];
+                            const data = {
+                              type: "vault-file",
+                              fileId: file.id,
+                              selectedFileIds: filesToMove
+                            };
+                            if (e.dataTransfer) {
+                              e.dataTransfer.setData("text/plain", JSON.stringify(data));
+                              e.dataTransfer.effectAllowed = "move";
+                            }
+                            setIsDraggingFiles(true);
+                            setDraggingFileCount(filesToMove.length);
+
+                            if (filesToMove.length > 1 && e.dataTransfer?.setDragImage) {
+                              const dragBadge = document.createElement('div');
+                              dragBadge.className = 'fixed -top-96 bg-accent text-black font-black text-xs px-3 py-1.5 rounded-xl shadow-2xl flex items-center gap-1.5';
+                              dragBadge.innerText = `Moving ${filesToMove.length} Files`;
+                              document.body.appendChild(dragBadge);
+                              e.dataTransfer.setDragImage(dragBadge, 20, 20);
+                              setTimeout(() => document.body.removeChild(dragBadge), 100);
+                            }
+                          }}
+                          onDragEnd={() => {
+                            setIsDraggingFiles(false);
+                            setDraggingFileCount(0);
+                            setDragOverFolderId(null);
+                          }}
+                          className={cn(
+                            "glass-card px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl flex items-center justify-between group gap-3 transition-all relative overflow-hidden cursor-grab active:cursor-grabbing",
+                            selectedFiles.includes(file.id) ? "border-accent/50 bg-accent/[0.04] ring-1 ring-accent/30" : "hover:border-white/20 hover:bg-white/[0.02]",
+                            isDraggingFiles && selectedFiles.includes(file.id) && "opacity-60 scale-[0.99]"
+                          )}
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFileSelection(file.id);
+                              }}
+                              className={cn(
+                                "w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center shrink-0",
+                                selectedFiles.includes(file.id) 
+                                  ? "bg-accent border-accent text-black shadow-[0_0_10px_rgba(0,255,157,0.4)]" 
+                                  : "border-white/20 hover:border-accent/50 bg-white/5"
+                              )}
+                            >
+                              {selectedFiles.includes(file.id) && <Check className="w-3 h-3 stroke-[4]" />}
+                            </button>
+
+                            <div 
+                              className="flex items-center gap-3 flex-1 cursor-pointer min-w-0"
+                              onClick={() => setPreviewFile(file)}
+                            >
+                              <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center group-hover:bg-accent/10 transition-colors shrink-0">
+                                <FileTypeIcon type={file.type} />
+                              </div>
+                              <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                                <p className="text-xs font-bold truncate group-hover:text-accent transition-colors">
+                                  {file.name}
+                                </p>
+                                <div className="flex items-center gap-1.5 shrink-0 mt-0.5 sm:mt-0">
+                                  {file.isEncrypted !== false && (
+                                    <span className="inline-flex items-center gap-1 text-[7px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                                      <ShieldCheck className="w-2 h-2 text-emerald-400" />
+                                      AES-256
+                                    </span>
+                                  )}
+                                  {file.tags && file.tags.length > 0 && (
+                                    <div className="hidden sm:flex gap-1 overflow-hidden">
+                                      {file.tags.slice(0, 2).map(tag => (
+                                        <span key={tag} className="text-[7px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full uppercase tracking-widest">
+                                          {tag}
+                                        </span>
+                                      ))}
+                                      {file.tags.length > 2 && (
+                                        <span className="text-[7px] font-bold text-zinc-500 bg-white/5 px-1 py-0.5 rounded-full">
+                                          +{file.tags.length - 2}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                            {/* Metadata on larger screens */}
+                            <div className="hidden md:flex items-center gap-6 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                              <span className="w-20 text-right whitespace-nowrap">{formatSize(file.size)}</span>
+                              <span className="w-24 text-center whitespace-nowrap">{format(new Date(file.createdAt), 'MMM d, yyyy')}</span>
+                            </div>
+
+                            {/* Mobile size indicator */}
+                            <span className="md:hidden text-[9px] font-bold text-zinc-500 whitespace-nowrap">
+                              {formatSize(file.size)}
+                            </span>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-1 shrink-0">
+                              {/* Move to Folder */}
+                              <div className="relative">
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMovingFile(movingFile?.id === file.id ? null : file);
+                                  }}
+                                  className={cn(
+                                    "p-1.5 sm:p-2 rounded-lg transition-all shrink-0",
+                                    movingFile?.id === file.id ? "text-accent bg-accent/10" : "text-zinc-500 hover:text-white hover:bg-white/5"
+                                  )}
+                                  title="Move to Folder"
+                                >
+                                  <Folder className="w-3.5 h-3.5" />
+                                </button>
+                                
+                                <AnimatePresence>
+                                  {movingFile?.id === file.id && (
+                                    <motion.div
+                                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                      className="absolute right-0 top-full mt-2 w-48 glass-card p-2 z-50 shadow-2xl"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest p-2 border-b border-white/5 mb-1">Move to:</p>
+                                      <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                                        <button
+                                          onClick={() => moveFileToFolder(file.id, null)}
+                                          className={cn(
+                                            "w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-2",
+                                            file.folderId === null ? "text-accent bg-accent/10" : "text-zinc-400 hover:bg-white/5"
+                                          )}
+                                        >
+                                          <Globe className="w-3 h-3" /> Root Vault
+                                        </button>
+                                        {folders.map(folder => (
+                                          <button
+                                            key={folder.id}
+                                            onClick={() => moveFileToFolder(file.id, folder.id)}
+                                            className={cn(
+                                              "w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-2",
+                                              file.folderId === folder.id ? "text-accent bg-accent/10" : "text-zinc-400 hover:bg-white/5"
+                                            )}
+                                          >
+                                            <Folder className="w-3 h-3" /> {folder.name}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownload(file);
+                                }}
+                                className="p-1.5 sm:p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-all shrink-0"
+                                title="Download"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPreviewFile(file);
+                                }}
+                                className="p-1.5 sm:p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-all shrink-0"
+                                title="Preview"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleFavorite(file.id);
+                                }}
+                                className={cn(
+                                  "p-1.5 sm:p-2 rounded-lg transition-all shrink-0",
+                                  file.isFavorite ? "text-yellow-500 bg-yellow-500/10" : "text-zinc-500 hover:text-white hover:bg-white/5"
+                                )}
+                                title="Favorite"
+                              >
+                                <Star className={cn("w-3.5 h-3.5", file.isFavorite ? "fill-current" : "")} />
+                              </button>
+                              
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShareFile(file);
+                                }}
+                                className="p-1.5 sm:p-2 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-lg transition-all shrink-0"
+                                title="Get Web Link & QR Code"
+                              >
+                                <QrCode className="w-3.5 h-3.5" />
+                              </button>
+
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteFile(file.id);
+                                }}
+                                className="p-1.5 sm:p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/5 rounded-lg transition-all shrink-0"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       {filteredFiles.map((file, idx) => (
@@ -4694,55 +5001,6 @@ export default function App() {
                             >
                               <Star className={cn("w-3.5 h-3.5 sm:w-4 h-4", file.isFavorite ? "fill-current" : "")} />
                             </button>
-                            <div className="relative">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setMovingFile(movingFile?.id === file.id ? null : file);
-                                }}
-                                className="p-2 sm:p-3 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg sm:rounded-xl transition-all shrink-0"
-                                title="Move to Folder"
-                              >
-                                <Folder className="w-3.5 h-3.5 sm:w-4 h-4" />
-                              </button>
-                              
-                              <AnimatePresence>
-                                {movingFile?.id === file.id && (
-                                  <motion.div 
-                                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                                    className="absolute bottom-full right-0 mb-2 z-50 bg-zinc-900 border border-white/10 p-2 rounded-xl shadow-2xl min-w-[180px]"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest px-3 py-2 border-b border-white/5 mb-1">Move to:</p>
-                                    <button 
-                                      onClick={() => moveFileToFolder(file.id, null)}
-                                      className={cn(
-                                        "w-full flex items-center gap-3 px-3 py-2 text-[10px] font-bold rounded-lg transition-all uppercase tracking-widest",
-                                        !file.folderId ? "text-accent bg-accent/10" : "text-zinc-400 hover:text-white hover:bg-white/5"
-                                      )}
-                                    >
-                                      <Globe className="w-3 h-3" />
-                                      Root
-                                    </button>
-                                    {folders.map(folder => (
-                                      <button 
-                                        key={folder.id}
-                                        onClick={() => moveFileToFolder(file.id, folder.id)}
-                                        className={cn(
-                                          "w-full flex items-center gap-3 px-3 py-2 text-[10px] font-bold rounded-lg transition-all uppercase tracking-widest",
-                                          file.folderId === folder.id ? "text-accent bg-accent/10" : "text-zinc-400 hover:text-white hover:bg-white/5"
-                                        )}
-                                      >
-                                        <Folder className="w-3 h-3" />
-                                        {folder.name}
-                                      </button>
-                                    ))}
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-                            </div>
 
                             <div className="relative">
                               <button 
@@ -4994,7 +5252,7 @@ export default function App() {
 
                 <div className="flex flex-col items-center pt-6 sm:pt-4">
                   <div className="bg-white p-4 rounded-[24px] inline-block mb-6 shadow-2xl relative">
-                    <QRCodeSVG value={`${window.location.origin}/share/${shareFile.id}`} size={140} />
+                    <QRCodeSVG value={getPublicShareUrl(shareFile.id)} size={140} />
                   </div>
 
                   {/* Decorative Progress Bar */}
@@ -5068,12 +5326,12 @@ export default function App() {
                       <input 
                         type="text" 
                         readOnly 
-                        value={`${window.location.origin}/share/${shareFile.id}`}
+                        value={getPublicShareUrl(shareFile.id)}
                         className="bg-transparent text-xs text-emerald-300 font-mono flex-1 px-1 focus:outline-none truncate select-all"
                       />
                       <button
                         onClick={async () => {
-                          const success = await copyToClipboard(`${window.location.origin}/share/${shareFile.id}`);
+                          const success = await copyToClipboard(getPublicShareUrl(shareFile.id));
                           if (success) {
                             setLinkCopied(true);
                             setTimeout(() => setLinkCopied(false), 2500);
@@ -5089,7 +5347,7 @@ export default function App() {
 
                   <button 
                     onClick={async () => {
-                      const success = await copyToClipboard(`${window.location.origin}/share/${shareFile.id}`);
+                      const success = await copyToClipboard(getPublicShareUrl(shareFile.id));
                       if (success) {
                         setLinkCopied(true);
                         setTimeout(() => setLinkCopied(false), 2500);
