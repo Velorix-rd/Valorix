@@ -145,9 +145,41 @@ async function startServer() {
     baseUrl = baseUrl.replace(/\/+$/, '');
 
     const robotsContent = `User-agent: *
-Allow: /
-Disallow: /api/
 
+# Explicitly Allowed Public Pages & Assets
+Allow: /
+Allow: /Valorix/
+Allow: /Valorix/share/
+Allow: /share/
+Allow: /assets/
+Allow: /*.js$
+Allow: /*.css$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.webp$
+Allow: /*.svg$
+Allow: /*.ico$
+Allow: /*.json$
+
+# Disallow Internal Backend, Upload Buffers & Non-Public Data
+Disallow: /api/
+Disallow: /uploads/
+Disallow: /admin/
+Disallow: /private/
+Disallow: /*?*token=
+Disallow: /*?*key=
+Disallow: /*?*secret=
+Disallow: /*?*pwd=
+Disallow: /*?*password=
+
+# Ignore URL Fragment Identifiers & Client-Side Routing Anchors
+Disallow: /*#*
+Disallow: /#*
+Disallow: /Valorix/#*
+Disallow: /*/#/
+
+# Official Clean Canonical XML Sitemap
 Sitemap: ${baseUrl}/sitemap.xml`.trim();
 
     res.send(robotsContent);

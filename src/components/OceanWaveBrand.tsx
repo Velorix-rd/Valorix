@@ -70,7 +70,7 @@ export const OceanWaveBrand: React.FC<OceanWaveBrandProps> = ({
           return (
             <span
               key={index}
-              className="inline-block animate-ocean-wave font-black bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-[length:200%_200%] bg-clip-text text-transparent animate-gradient-flow filter drop-shadow-[0_4px_18px_rgba(16,185,129,0.45)]"
+              className="inline-block animate-ocean-wave font-black bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent filter drop-shadow-[0_4px_18px_rgba(16,185,129,0.45)]"
               style={{
                 animationDelay: `${delaySeconds}s`,
               }}

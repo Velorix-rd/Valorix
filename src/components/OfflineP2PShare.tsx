@@ -271,6 +271,7 @@ export default function OfflineP2PShare({ onClose, currentUserDisplayName, initi
       if (!isComponentMounted) return;
       try {
         const wsUrl = getWsUrl();
+        if (!wsUrl) return; // Static host without WS server
         socket = new WebSocket(wsUrl);
         signalSocketRef.current = socket;
 

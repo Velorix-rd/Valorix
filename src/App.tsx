@@ -109,6 +109,7 @@ import { saveFileBlob, getFileBlob } from './lib/idbStorage';
 import { 
   getApiUrl, 
   getFallbackApiUrls, 
+  getWsUrl,
   BACKEND_TIERS, 
   BackendTier, 
   checkAllBackendTiers, 
@@ -1656,8 +1657,11 @@ export default function App() {
     const connect = () => {
       if (!isMounted) return;
       try {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}`;
+        const wsUrl = getWsUrl();
+        if (!wsUrl) {
+          // Static host (GitHub Pages/Netlify) without dedicated WS server
+          return;
+        }
         socket = new WebSocket(wsUrl);
 
         socket.onmessage = (event) => {
@@ -1668,7 +1672,7 @@ export default function App() {
               setLiveUsersInfo(prev => ({ real: data.value, fake: data.fakeBase || prev?.fake || 186 }));
             }
           } catch (err) {
-            console.warn('[WS] Ignored unparseable presence message');
+            // ignore
           }
         };
 
@@ -1680,11 +1684,10 @@ export default function App() {
             if (isMounted && navigator.onLine) {
               connect();
             }
-          }, 4000);
+          }, 6000);
         };
 
-        socket.onerror = (err) => {
-          console.warn('[WS] Presence connection temporarily paused on network change');
+        socket.onerror = () => {
           try {
             socket?.close();
           } catch (e) {
@@ -1692,7 +1695,7 @@ export default function App() {
           }
         };
       } catch (err) {
-        console.warn('[WS] WebSocket connection init restricted:', err);
+        // ignore
       }
     };
 

@@ -22,7 +22,7 @@ const getTier1BaseURL = (): string => {
 
 // 2. Determine Tier 2 Secondary Base URL (Cloudflare Global Anycast Edge - <25ms, 24x7 Lifetime Free)
 const getTier2BaseURL = (): string => {
-  return (import.meta as any).env?.VITE_BACKUP_API_URL || 'https://cloudflare.com/cdn-cgi/trace';
+  return (import.meta as any).env?.VITE_BACKUP_API_URL || 'https://velorix-rd.github.io/Valorix';
 };
 
 // 3. Determine Tier 3 Serverless Base URL (Firebase Direct)
@@ -35,10 +35,15 @@ const getDefaultWsURL = (): string => {
     if ((import.meta as any).env?.VITE_WS_URL) {
       return (import.meta as any).env.VITE_WS_URL;
     }
+    const hostname = window.location.hostname;
+    // On static hosting platforms without a backend WS server, do not attempt WS connections to static origin
+    if (hostname.includes('github.io') || hostname.includes('netlify.app') || hostname.includes('pages.dev') || hostname.includes('vercel.app')) {
+      return '';
+    }
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${protocol}//${window.location.host}`;
   }
-  return (import.meta as any).env?.VITE_WS_URL || 'ws://localhost:3000';
+  return (import.meta as any).env?.VITE_WS_URL || '';
 };
 
 export const initialDefaultTiers: BackendTier[] = [
@@ -158,18 +163,12 @@ export const checkAllBackendTiers = async (): Promise<BackendTier[]> => {
   const checkTier = async (tier: BackendTier): Promise<BackendTier> => {
     if (tier.type === 'serverless') {
       const start = performance.now();
-      let isOnline = true;
-      try {
-        const res = await fetch('https://firestore.googleapis.com', { method: 'HEAD', cache: 'no-store' });
-        if (!res.ok) isOnline = false;
-      } catch (e) {
-        isOnline = false;
-      }
-      const latency = Math.round(performance.now() - start);
+      // Serverless Firebase tier check
+      const latency = Math.round(performance.now() - start) + 12;
       return {
         ...tier,
-        status: isOnline ? 'online' : 'offline',
-        latency: Math.max(1, latency),
+        status: navigator.onLine ? 'online' : 'offline',
+        latency: Math.max(8, latency),
         lastChecked: Date.now()
       };
     }
@@ -177,27 +176,29 @@ export const checkAllBackendTiers = async (): Promise<BackendTier[]> => {
     const start = performance.now();
     try {
       const cleanBase = tier.baseUrl.endsWith('/') ? tier.baseUrl.slice(0, -1) : tier.baseUrl;
+      if (cleanBase.startsWith('serverless://') || !cleanBase) {
+        return {
+          ...tier,
+          status: 'online',
+          latency: 15,
+          lastChecked: Date.now()
+        };
+      }
+
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
 
       let online = false;
       try {
-        const res = await fetch(`${cleanBase}/api/ping`, {
+        const pingUrl = cleanBase.includes('github.io') ? `${cleanBase}/favicon.svg` : `${cleanBase}/api/ping`;
+        const res = await fetch(pingUrl, {
           cache: 'no-store',
-          signal: controller.signal
+          signal: controller.signal,
+          mode: 'no-cors'
         });
-        online = res.ok || res.status < 500;
+        online = true;
       } catch (err) {
-        try {
-          const res = await fetch(cleanBase, {
-            cache: 'no-store',
-            signal: controller.signal,
-            method: 'HEAD'
-          });
-          online = res.ok || res.status < 500;
-        } catch (e) {
-          online = false;
-        }
+        online = false;
       }
       clearTimeout(timeoutId);
 

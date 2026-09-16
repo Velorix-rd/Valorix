@@ -26,17 +26,26 @@ export default defineConfig(({mode}) => {
     },
     build: {
       outDir: 'dist',
+      target: 'es2020',
       sourcemap: false,
       minify: 'esbuild',
       cssCodeSplit: true,
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {
-          manualChunks: {
-            'react-vendor': ['react', 'react-dom'],
-            'firebase-vendor': ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/storage'],
-            'ui-vendor': ['lucide-react', 'motion'],
-            'utils-vendor': ['date-fns', 'clsx', 'tailwind-merge', 'qrcode.react'],
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('firebase')) {
+                return 'firebase-vendor';
+              }
+              if (id.includes('react') || id.includes('react-dom')) {
+                return 'react-vendor';
+              }
+              if (id.includes('lucide-react') || id.includes('motion')) {
+                return 'ui-vendor';
+              }
+              return 'vendor';
+            }
           },
         },
       },
