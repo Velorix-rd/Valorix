@@ -1,6 +1,6 @@
 {
-  "name": "Velorix | Send Large Files Free | Fast P2P Transfer & Secure Cloud Vault",
-  "description": "Velorix is the fastest free file sharing site. Send unlimited large files instantly via P2P transfer. Secure AES-GCM encrypted cloud storage with no size limits.",
+  "name": "Velorix – Fast & Secure File Sharing | Free Cloud Vault & P2P Transfer",
+  "description": "Velorix is a free, ultra-fast file sharing platform. Transfer large files, photos, videos, and documents with AES-256 encryption and zero size limits.",
   "requestFramePermissions": [
     "microphone"
   ],

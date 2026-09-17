@@ -5,8 +5,6 @@
 # ==============================================================================
 
 User-agent: *
-
-# --- Explicitly Allowed Public Pages & Assets ---
 Allow: /
 Allow: /Valorix/
 Allow: /Valorix/share/
@@ -21,8 +19,6 @@ Allow: /*.webp$
 Allow: /*.svg$
 Allow: /*.ico$
 Allow: /*.json$
-
-# --- Disallow Internal Backend, Upload Buffers & Non-Public Data ---
 Disallow: /api/
 Disallow: /uploads/
 Disallow: /admin/
@@ -33,11 +29,37 @@ Disallow: /*?*secret=
 Disallow: /*?*pwd=
 Disallow: /*?*password=
 
-# --- Ignore URL Fragment Identifiers & Client-Side Routing Anchors ---
-Disallow: /*#*
-Disallow: /#*
-Disallow: /Valorix/#*
-Disallow: /*/#/
+User-agent: Googlebot
+Allow: /
+Allow: /Valorix/
+Allow: /Valorix/share/
+Allow: /share/
+
+User-agent: Bingbot
+Allow: /
+Allow: /Valorix/
+Allow: /Valorix/share/
+Allow: /share/
+
+User-agent: Slurp
+Allow: /
+Allow: /Valorix/
+
+User-agent: DuckDuckBot
+Allow: /
+Allow: /Valorix/
+
+User-agent: Yandex
+Allow: /
+Allow: /Valorix/
+
+User-agent: Baiduspider
+Allow: /
+Allow: /Valorix/
+
+User-agent: Applebot
+Allow: /
+Allow: /Valorix/
 
 # --- Official Clean Canonical XML Sitemap ---
 Sitemap: https://velorix-rd.github.io/Valorix/sitemap.xml

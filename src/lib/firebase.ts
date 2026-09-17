@@ -1,10 +1,10 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { 
   getAuth, 
   GoogleAuthProvider, 
   OAuthProvider, 
   FacebookAuthProvider,
-  GithubAuthProvider,
+  GithubAuthProvider, 
   signInWithPopup, 
   signOut, 
   onAuthStateChanged, 
@@ -13,7 +13,24 @@ import {
   updateProfile,
   User 
 } from 'firebase/auth';
-import { initializeFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, getDocFromServer, increment, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  onSnapshot, 
+  query, 
+  where, 
+  orderBy, 
+  getDocFromServer, 
+  increment, 
+  serverTimestamp, 
+  writeBatch 
+} from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, FirebaseStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -22,17 +39,24 @@ if (!firebaseConfig || !firebaseConfig.projectId) {
 }
 
 // Initialize Firebase SDK
-const app = initializeApp(firebaseConfig);
+const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
-// Ensure we use the correct database ID
-const databaseId = firebaseConfig.firestoreDatabaseId || '(default)';
-console.log('Initializing Firestore with database ID:', databaseId);
+// Initialize Firestore with specific database ID as mandated by Firebase skill
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
 
-// Use initializeFirestore with experimentalForceLongPolling to fix connection issues in some environments
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-  ignoreUndefinedProperties: true,
-}, databaseId);
+// Offline-safe connection test
+if (typeof window !== 'undefined') {
+  const testConnection = async () => {
+    try {
+      await getDocFromServer(doc(db, 'test', 'connection'));
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('the client is offline')) {
+        console.warn('[Firestore] Operating in offline mode until connection is re-established.');
+      }
+    }
+  };
+  testConnection();
+}
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
