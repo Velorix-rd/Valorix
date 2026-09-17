@@ -32,16 +32,27 @@ service cloud.firestore {
 
     function isValidFile(data) {
       return data.keys().hasAll(['id', 'name', 'size', 'ownerId', 'downloadUrl', 'createdAt', 'isPublic']) &&
-             data.name is string && data.name.size() < 255 &&
+             data.name is string && data.name.size() < 500 &&
              data.size is number && data.size >= 0 &&
              data.ownerId is string &&
              data.downloadUrl is string &&
              data.createdAt is string &&
              data.isPublic is bool &&
+             (data.type == null || data.type is string) &&
              (data.expiryDate == null || data.expiryDate is string) &&
              (data.password == null || data.password is string) &&
              (data.folderId == null || data.folderId is string) &&
-             (data.isFavorite == null || data.isFavorite is bool);
+             (data.isFavorite == null || data.isFavorite is bool) &&
+             (data.isEncrypted == null || data.isEncrypted is bool) &&
+             (data.encryptionAlgorithm == null || data.encryptionAlgorithm is string) &&
+             (data.encryptionIv == null || data.encryptionIv is string) &&
+             (data.encryptionKey == null || data.encryptionKey is string) &&
+             (data.originalSize == null || data.originalSize is number) &&
+             (data.originalType == null || data.originalType is string) &&
+             (data.storageType == null || data.storageType is string) &&
+             (data.chunkCount == null || data.chunkCount is number) &&
+             (data.isGuest == null || data.isGuest is bool) &&
+             (data.tags == null || data.tags is list);
     }
 
     function isValidPresence(data) {

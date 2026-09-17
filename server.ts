@@ -7,6 +7,7 @@ import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import nodemailer from 'nodemailer';
 import compression from 'compression';
+import { generateDynamicSitemapXml, isEligibleForPublicSitemap, SitemapFileEntry } from './src/utils/sitemapGenerator.js';
 
 const PORT = 3000;
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
@@ -69,6 +70,9 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 * 1024 } // 5GB per-file limit
 });
 
+// Global in-memory registry of public files for dynamic sitemap serving
+const serverPublicFilesMap = new Map<string, SitemapFileEntry>();
+
 async function startServer() {
   const app = express();
 
@@ -91,7 +95,7 @@ async function startServer() {
 
   // --- API Routes ---
 
-  // sitemap.xml route
+  // Dynamic sitemap.xml route
   app.get('/sitemap.xml', (req, res) => {
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=3600');
@@ -109,18 +113,10 @@ async function startServer() {
       baseUrl = `${protocol}://${host}`;
     }
     baseUrl = baseUrl.replace(/\/+$/, '');
-    const today = new Date().toISOString().split('T')[0];
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="sitemap.xsl"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${baseUrl}/</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-</urlset>`.trim();
+    // Gather public files from in-memory store
+    const publicFilesList = Array.from(serverPublicFilesMap.values());
+    const xml = generateDynamicSitemapXml(publicFilesList, { baseUrl });
 
     res.send(xml);
   });
@@ -222,16 +218,91 @@ Sitemap: ${baseUrl}/sitemap.xml`.trim();
     // Send email notification
     await sendUploadNotification(uploaderName, uploadedFiles);
 
+    // Register uploaded public files in dynamic sitemap map
+    uploadedFiles.forEach(file => {
+      serverPublicFilesMap.set(file.id, {
+        id: file.id,
+        name: file.name,
+        isPublic: true,
+        createdAt: file.createdAt,
+        isGuest: file.isGuest
+      });
+    });
+
     res.json(uploadedFiles);
   });
+
+  // Sitemap sync endpoint for live client updates
+  app.post('/api/sitemap-sync', (req, res) => {
+    try {
+      const { publicFiles } = req.body;
+      if (Array.isArray(publicFiles)) {
+        publicFiles.forEach((file: SitemapFileEntry) => {
+          if (file && file.id && isEligibleForPublicSitemap(file)) {
+            serverPublicFilesMap.set(file.id, file);
+          } else if (file && file.id && file.isPublic === false) {
+            serverPublicFilesMap.delete(file.id);
+          }
+        });
+      }
+      res.json({ status: 'synced', totalPublicFiles: serverPublicFilesMap.size });
+    } catch {
+      res.status(500).json({ error: 'Failed to sync sitemap' });
+    }
+  });
+
+  // Helper to safely resolve uploaded file by ID, decoded filename, or basename
+  const resolveUploadFilePath = (filename: string): string | null => {
+    if (!filename) return null;
+    let decoded = filename;
+    try { decoded = decodeURIComponent(filename); } catch (e) {}
+
+    const candidates = [
+      filename,
+      decoded,
+      path.basename(filename),
+      path.basename(decoded)
+    ];
+
+    for (const candidate of candidates) {
+      const safeName = path.basename(candidate);
+      const targetPath = path.join(UPLOADS_DIR, safeName);
+      if (fs.existsSync(targetPath)) {
+        return targetPath;
+      }
+    }
+
+    try {
+      const files = fs.readdirSync(UPLOADS_DIR);
+      const matched = files.find(f => 
+        f === filename || 
+        f === decoded || 
+        f.endsWith(filename) || 
+        f.endsWith(decoded) || 
+        f.startsWith(filename) ||
+        f.startsWith(decoded)
+      );
+      if (matched) {
+        return path.join(UPLOADS_DIR, matched);
+      }
+    } catch {}
+
+    return null;
+  };
 
   // Delete endpoint
   app.delete('/api/delete/:filename', async (req, res) => {
     const filename = req.params.filename;
-    const filePath = path.join(UPLOADS_DIR, filename);
+    const filePath = resolveUploadFilePath(filename);
+    
+    // Remove from sitemap map
+    serverPublicFilesMap.delete(filename);
+    try {
+      serverPublicFilesMap.delete(decodeURIComponent(filename));
+    } catch {}
     
     try {
-      if (await fs.pathExists(filePath)) {
+      if (filePath && await fs.pathExists(filePath)) {
         await fs.remove(filePath);
         res.status(200).json({ message: 'File deleted successfully' });
       } else {
@@ -243,17 +314,62 @@ Sitemap: ${baseUrl}/sitemap.xml`.trim();
     }
   });
 
+  // File metadata info endpoint for instant share link resolution
+  app.get('/api/file-info/:filename', (req, res) => {
+    const filePath = resolveUploadFilePath(req.params.filename);
+    if (!filePath) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    try {
+      const stat = fs.statSync(filePath);
+      const baseName = path.basename(filePath);
+      const parts = baseName.split('-');
+      const originalName = parts.length > 2 ? parts.slice(2).join('-') : baseName;
+      res.json({
+        id: baseName,
+        name: originalName,
+        size: stat.size,
+        type: 'application/octet-stream',
+        createdAt: stat.birthtime ? stat.birthtime.toISOString() : new Date().toISOString(),
+        isPublic: true
+      });
+    } catch (e) {
+      res.status(500).json({ error: 'Could not inspect file' });
+    }
+  });
+
+  // HEAD download endpoint for instant existence and size checks
+  app.head('/api/download/:filename', (req, res) => {
+    const filePath = resolveUploadFilePath(req.params.filename);
+    if (!filePath) {
+      return res.status(404).end();
+    }
+    try {
+      const stat = fs.statSync(filePath);
+      res.setHeader('Content-Length', stat.size);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.status(200).end();
+    } catch {
+      res.status(500).end();
+    }
+  });
+
   // Download endpoint with Range Request support
   app.get('/api/download/:filename', (req, res) => {
-    const filePath = path.join(UPLOADS_DIR, req.params.filename);
+    const filePath = resolveUploadFilePath(req.params.filename);
     
-    if (!fs.existsSync(filePath)) {
+    if (!filePath || !fs.existsSync(filePath)) {
       return res.status(404).send('File not found');
     }
 
     const stat = fs.statSync(filePath);
     const fileSize = stat.size;
     const range = req.headers.range;
+    const baseName = path.basename(filePath);
+    const parts = baseName.split('-');
+    const downloadFilename = parts.length > 2 ? parts.slice(2).join('-') : baseName;
 
     if (range) {
       const parts = range.replace(/bytes=/, "").split("-");
@@ -280,7 +396,7 @@ Sitemap: ${baseUrl}/sitemap.xml`.trim();
       const head = {
         'Content-Length': fileSize,
         'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${req.params.filename.split('-').slice(2).join('-')}"`
+        'Content-Disposition': `attachment; filename="${downloadFilename}"`
       };
       res.writeHead(200, head);
       const fullStream = fs.createReadStream(filePath);

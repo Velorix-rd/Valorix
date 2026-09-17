@@ -124,6 +124,7 @@ import OceanWaveBrand from './components/OceanWaveBrand';
 import FeaturesShowcase from './components/FeaturesShowcase';
 import { SimpleContactFooter } from './components/SimpleContactFooter';
 import { APP_VERSION, APP_VERSION_LABEL } from './config/version';
+import { initRealtimeSitemapSync } from './services/sitemapRealtime';
 
 // --- Types ---
 declare global {
@@ -189,48 +190,49 @@ export function getShareIdFromLocation(): string | null {
     const pathname = window.location.pathname || '';
     
     // 1. Path match: /share/:id (handling subpath like /Valorix/share/:id or trailing slash)
-    const pathMatch = pathname.match(/\/share\/([a-zA-Z0-9_-]+)/i);
+    const pathMatch = pathname.match(/\/share\/([^/?#]+)/i);
     if (pathMatch && pathMatch[1]) {
-      return pathMatch[1].trim();
+      return decodeURIComponent(pathMatch[1]).trim();
     }
 
     // 2. Query params: ?share=ID, ?file=ID, ?id=ID
     const searchParams = new URLSearchParams(window.location.search || '');
     const queryShare = searchParams.get('share') || searchParams.get('file') || searchParams.get('id');
     if (queryShare && queryShare.trim()) {
-      return queryShare.trim();
+      return decodeURIComponent(queryShare.trim()).trim();
     }
 
     // 3. SPA redirect param: ?p=/share/ID
     const pParam = searchParams.get('p');
     if (pParam) {
       const decodedP = decodeURIComponent(pParam);
-      const pMatch = decodedP.match(/\/share\/([a-zA-Z0-9_-]+)/i);
+      const pMatch = decodedP.match(/\/share\/([^/?#]+)/i);
       if (pMatch && pMatch[1]) {
-        return pMatch[1].trim();
+        return decodeURIComponent(pMatch[1]).trim();
       }
     }
 
-    // 4. Query string starting with ?/share/ID
+    // 4. Query string starting with ?/share/ID or ?/Valorix/share/ID
     if (window.location.search && window.location.search.startsWith('?/')) {
-      const qMatch = decodeURIComponent(window.location.search).match(/\/share\/([a-zA-Z0-9_-]+)/i);
+      const decodedQuery = decodeURIComponent(window.location.search);
+      const qMatch = decodedQuery.match(/\/share\/([^/?#]+)/i);
       if (qMatch && qMatch[1]) {
-        return qMatch[1].trim();
+        return decodeURIComponent(qMatch[1]).trim();
       }
     }
 
-    // 5. Hash match: #/share/ID or #share/ID
+    // 5. Hash match: #/share/ID or #share/ID or #/Valorix/share/ID
     const hash = window.location.hash || '';
-    const hashMatch = hash.match(/share\/([a-zA-Z0-9_-]+)/i);
+    const hashMatch = decodeURIComponent(hash).match(/share\/([^/?#]+)/i);
     if (hashMatch && hashMatch[1]) {
-      return hashMatch[1].trim();
+      return decodeURIComponent(hashMatch[1]).trim();
     }
 
     // 6. Session / local storage backup passed from 404.html redirect
     const sessionShareId = safeStorage.getItem('velorix_share_id') || sessionStorage.getItem('velorix_share_id');
     if (sessionShareId && sessionShareId.trim()) {
       sessionStorage.removeItem('velorix_share_id');
-      return sessionShareId.trim();
+      return decodeURIComponent(sessionShareId.trim()).trim();
     }
   } catch (e) {
     console.warn('Error extracting shareId from location:', e);
@@ -239,13 +241,13 @@ export function getShareIdFromLocation(): string | null {
 }
 
 export function getPublicShareUrl(fileId: string): string {
-  if (typeof window === 'undefined') return `/share/${fileId}`;
+  if (typeof window === 'undefined') return `/share/${encodeURIComponent(fileId)}`;
   const origin = window.location.origin;
   const isGitHubPages = window.location.hostname.includes('github.io') || window.location.pathname.toLowerCase().includes('/valorix');
   if (isGitHubPages) {
-    return `https://velorix-rd.github.io/Valorix/#/share/${fileId}`;
+    return `https://velorix-rd.github.io/Valorix/#/share/${encodeURIComponent(fileId)}`;
   }
-  return `${origin}/share/${fileId}`;
+  return `${origin}/share/${encodeURIComponent(fileId)}`;
 }
 
 export async function uploadFileChunksToFirestore(fileId: string, blob: Blob): Promise<boolean> {
@@ -737,11 +739,11 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
     if (e) e.preventDefault();
     if (!customShareCode.trim()) return;
     let target = customShareCode.trim();
-    const match = target.match(/\/share\/([a-zA-Z0-9_-]+)/i);
-    if (match && match[1]) target = match[1];
+    const match = target.match(/\/share\/([^/?#]+)/i);
+    if (match && match[1]) target = decodeURIComponent(match[1].trim());
     const isGitHubPages = window.location.pathname.toLowerCase().includes('/valorix');
     const base = isGitHubPages ? '/Valorix/#/share/' : '/#/share/';
-    window.location.href = `${base}${target}`;
+    window.location.href = `${base}${encodeURIComponent(target)}`;
   };
 
   useEffect(() => {
@@ -826,47 +828,116 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
         return;
       }
 
+      const decodedId = (() => {
+        try { return decodeURIComponent(cleanShareId); } catch { return cleanShareId; }
+      })();
+
+      const idCandidates = Array.from(new Set([
+        cleanShareId,
+        decodedId,
+        encodeURIComponent(cleanShareId),
+        encodeURIComponent(decodedId)
+      ].filter(Boolean)));
+
       try {
-        // 1. Try Firestore database
-        const docRef = doc(db, 'files', cleanShareId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data() as FileMetadata;
-          if (data.expiryDate && new Date(data.expiryDate) < new Date()) {
-            if (!isCancelled) setError('This link has expired.');
-          } else if (!isCancelled) {
-            setFile(data);
+        // 1. Try Firestore database by direct document ID lookup for all candidate variations
+        for (const testId of idCandidates) {
+          try {
+            const docRef = doc(db, 'files', testId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              const data = docSnap.data() as FileMetadata;
+              if (data.expiryDate && new Date(data.expiryDate) < new Date()) {
+                if (!isCancelled) setError('This link has expired.');
+              } else if (!isCancelled) {
+                setFile(data);
+              }
+              if (!isCancelled) setLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.warn('Firestore doc getDoc error for id:', testId, e);
           }
-          if (!isCancelled) setLoading(false);
-          return;
         }
 
-        // 1b. Fallback: Check backend server download endpoint
+        // 1b. Try Firestore collection query for matching public files by id or name
         try {
-          const downloadUrlCandidate = getApiUrl(`/api/download/${cleanShareId}`);
-          const backendCheck = await fetch(downloadUrlCandidate, { method: 'HEAD' });
-          if (backendCheck.ok && !isCancelled) {
-            const filename = cleanShareId.includes('-') ? cleanShareId.split('-').slice(2).join('-') || cleanShareId : cleanShareId;
-            const size = parseInt(backendCheck.headers.get('content-length') || '0', 10);
-            const type = backendCheck.headers.get('content-type') || 'application/octet-stream';
-
-            const serverFile: FileMetadata = {
-              id: cleanShareId,
-              name: filename,
-              size: size,
-              type: type,
-              ownerId: 'server',
-              downloadUrl: downloadUrlCandidate,
-              isPublic: true,
-              createdAt: new Date().toISOString()
-            };
-
-            setFile(serverFile);
-            setLoading(false);
+          const filesRef = collection(db, 'files');
+          const q = query(filesRef, where('isPublic', '==', true));
+          const snap = await getDocs(q);
+          const matchedDoc = snap.docs.find(d => {
+            const data = d.data();
+            return idCandidates.includes(d.id) || 
+                   idCandidates.includes(data.id) || 
+                   idCandidates.includes(data.name);
+          });
+          if (matchedDoc && matchedDoc.exists()) {
+            const data = matchedDoc.data() as FileMetadata;
+            if (data.expiryDate && new Date(data.expiryDate) < new Date()) {
+              if (!isCancelled) setError('This link has expired.');
+            } else if (!isCancelled) {
+              setFile(data);
+            }
+            if (!isCancelled) setLoading(false);
             return;
           }
-        } catch (backendErr) {
-          console.warn('Backend HEAD check skipped:', backendErr);
+        } catch (queryErr) {
+          console.warn('Firestore fallback query check error:', queryErr);
+        }
+
+        // 1c. Fallback: Check backend server file-info and download endpoint
+        for (const testId of idCandidates) {
+          try {
+            const fileInfoUrl = getApiUrl(`/api/file-info/${encodeURIComponent(testId)}`);
+            const infoRes = await fetch(fileInfoUrl);
+            if (infoRes.ok && !isCancelled) {
+              const infoData = await infoRes.json();
+              if (infoData && infoData.id) {
+                const serverFile: FileMetadata = {
+                  id: infoData.id,
+                  name: infoData.name || testId,
+                  size: infoData.size || 0,
+                  type: infoData.type || 'application/octet-stream',
+                  ownerId: 'server',
+                  downloadUrl: getApiUrl(`/api/download/${encodeURIComponent(infoData.id)}`),
+                  isPublic: true,
+                  createdAt: infoData.createdAt || new Date().toISOString()
+                };
+                setFile(serverFile);
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (backendErr) {
+            console.warn('Backend file-info check skipped:', backendErr);
+          }
+
+          try {
+            const downloadUrlCandidate = getApiUrl(`/api/download/${encodeURIComponent(testId)}`);
+            const backendCheck = await fetch(downloadUrlCandidate, { method: 'HEAD' });
+            if (backendCheck.ok && !isCancelled) {
+              const filename = testId.includes('-') ? testId.split('-').slice(2).join('-') || testId : testId;
+              const size = parseInt(backendCheck.headers.get('content-length') || '0', 10);
+              const type = backendCheck.headers.get('content-type') || 'application/octet-stream';
+
+              const serverFile: FileMetadata = {
+                id: testId,
+                name: filename,
+                size: size,
+                type: type,
+                ownerId: 'server',
+                downloadUrl: downloadUrlCandidate,
+                isPublic: true,
+                createdAt: new Date().toISOString()
+              };
+
+              setFile(serverFile);
+              setLoading(false);
+              return;
+            }
+          } catch (headErr) {
+            console.warn('Backend HEAD check skipped:', headErr);
+          }
         }
 
         // 2. Fallback: check local storage and IndexedDB
@@ -874,7 +945,7 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
         if (localFilesRaw) {
           try {
             const parsed = JSON.parse(localFilesRaw);
-            const found = parsed.find((f: any) => f.id === cleanShareId);
+            const found = parsed.find((f: any) => idCandidates.includes(f.id) || idCandidates.includes(f.name));
             if (found && !isCancelled) {
               setFile(found);
               setLoading(false);
@@ -883,20 +954,22 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
           } catch (e) {}
         }
 
-        const idbBlob = await getFileBlob(cleanShareId);
-        if (idbBlob && !isCancelled) {
-          setFile({
-            id: cleanShareId,
-            name: (idbBlob as any).name || 'shared-file',
-            size: idbBlob.size,
-            type: idbBlob.type || 'application/octet-stream',
-            ownerId: 'local',
-            downloadUrl: URL.createObjectURL(idbBlob),
-            isPublic: true,
-            createdAt: new Date().toISOString()
-          });
-          setLoading(false);
-          return;
+        for (const testId of idCandidates) {
+          const idbBlob = await getFileBlob(testId);
+          if (idbBlob && !isCancelled) {
+            setFile({
+              id: testId,
+              name: (idbBlob as any).name || 'shared-file',
+              size: idbBlob.size,
+              type: idbBlob.type || 'application/octet-stream',
+              ownerId: 'local',
+              downloadUrl: URL.createObjectURL(idbBlob),
+              isPublic: true,
+              createdAt: new Date().toISOString()
+            });
+            setLoading(false);
+            return;
+          }
         }
 
         if (!isCancelled) {
@@ -904,12 +977,12 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
         }
       } catch (err) {
         console.warn('Error fetching share file:', err);
-        // Fallback to local storage on permission error
+        // Fallback to local storage on error
         const localFilesRaw = safeStorage.getItem('files');
         if (localFilesRaw) {
           try {
             const parsed = JSON.parse(localFilesRaw);
-            const found = parsed.find((f: any) => f.id === cleanShareId);
+            const found = parsed.find((f: any) => idCandidates.includes(f.id) || idCandidates.includes(f.name));
             if (found && !isCancelled) {
               setFile(found);
               setLoading(false);
@@ -2015,6 +2088,14 @@ export default function App() {
       setLoading(false);
     });
     return () => unsubscribe();
+  }, []);
+
+  // Initialize dynamic sitemap live listener to auto-sync public URLs whenever public files change
+  useEffect(() => {
+    const cleanup = initRealtimeSitemapSync();
+    return () => {
+      cleanup();
+    };
   }, []);
 
   useEffect(() => {
@@ -3574,10 +3655,10 @@ export default function App() {
                         e.preventDefault();
                         if (!landingShareLink.trim()) return;
                         let target = landingShareLink.trim();
-                        const match = target.match(/\/share\/([a-zA-Z0-9_-]+)/i);
-                        if (match && match[1]) target = match[1];
+                        const match = target.match(/\/share\/([^/?#]+)/i);
+                        if (match && match[1]) target = decodeURIComponent(match[1].trim());
                         setShareId(target);
-                        window.history.pushState(null, '', `/share/${target}`);
+                        window.history.pushState(null, '', `/share/${encodeURIComponent(target)}`);
                       }} 
                       className="flex items-center gap-1.5 bg-black/40 border border-white/10 rounded-xl p-1 focus-within:border-accent/50 transition-all"
                     >
