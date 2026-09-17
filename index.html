@@ -220,17 +220,33 @@
     </script>
   </head>
   <body>
-    <!-- Semantic Static SEO Heading for Search Engines (Bing, Google, DuckDuckGo) -->
-    <h1 class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;">
-      Velorix - Fast and Secure File Sharing with Free Cloud Vault & P2P Transfer
-    </h1>
+    <!-- Semantic Static SEO Content for Search Engine Crawlers (Bingbot, Googlebot) -->
+    <noscript>
+      <div style="padding: 24px; font-family: sans-serif; background: #0a0a0c; color: #fff;">
+        <h1>Velorix - Fast and Secure File Sharing | Free Cloud Vault & P2P Transfer</h1>
+        <p>Velorix is a high-speed, secure file sharing platform. Send large files, photos, videos, and documents instantly with end-to-end encryption and zero size limits.</p>
+        <h2>Key Features:</h2>
+        <ul>
+          <li><strong>Direct P2P Transfer:</strong> WebRTC powered high-speed file streaming directly between devices.</li>
+          <li><strong>Zero Knowledge Encryption:</strong> Client-side 256-bit AES-GCM cryptography guarantees total privacy.</li>
+          <li><strong>Encrypted Cloud Storage:</strong> Backup and share large files securely with custom expiry links.</li>
+          <li><strong>Cross-Platform:</strong> Works seamlessly on Web, Android, iOS, Windows, and macOS without registration.</li>
+        </ul>
+      </div>
+    </noscript>
 
     <div id="root">
       <div id="velorix-loader" style="min-height: 100vh; background-color: #030303; display: flex; align-items: center; justify-content: center; color: #00FF9D; font-family: system-ui, -apple-system, sans-serif;">
-        <div style="text-align: center; max-width: 360px; padding: 20px;">
-          <div style="width: 48px; height: 48px; border: 3px solid rgba(0, 255, 157, 0.2); border-top-color: #00FF9D; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px auto;"></div>
-          <div style="font-weight: 800; letter-spacing: 0.15em; font-size: 14px; text-transform: uppercase;">VELORIX</div>
-          <div id="loader-subtext" style="font-size: 11px; color: #a1a1aa; margin-top: 4px;">Loading Secure Vault...</div>
+        <div style="text-align: center; max-width: 420px; padding: 20px;">
+          <!-- Static visible header & descriptive text for bot crawlers prior to JS hydration -->
+          <h1 style="font-size: 20px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #00FF9D; margin-bottom: 8px;">
+            Velorix
+          </h1>
+          <p style="font-size: 13px; color: #d4d4d8; line-height: 1.5; margin-bottom: 16px;">
+            Fast, secure, end-to-end encrypted file sharing and high-speed P2P transfer vault.
+          </p>
+          <div style="width: 40px; height: 40px; border: 3px solid rgba(0, 255, 157, 0.2); border-top-color: #00FF9D; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px auto;"></div>
+          <div id="loader-subtext" style="font-size: 11px; color: #71717a;">Loading Secure App...</div>
           
           <div id="loader-fallback" style="display: none; margin-top: 18px;">
             <p style="font-size: 12px; color: #a1a1aa; margin-bottom: 12px; line-height: 1.5;">
