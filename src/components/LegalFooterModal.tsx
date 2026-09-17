@@ -151,7 +151,7 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-3 text-[11px] text-zinc-400 text-center md:text-left">
-          Security Guarantee: Velorix is engineered with bank-grade AES-256 GCM client-side encryption and direct P2P data isolation. Your files never pass unencrypted over any network, preventing all forms of data leaks, hacking, unauthorized snooping, malware distribution, or third-party tracking. You retain 100% full sovereignty over your confidential files.
+          <strong className="text-zinc-300">Security Guarantee & Legal Disclaimer:</strong> Velorix is engineered with bank-grade AES-256 GCM client-side encryption and direct P2P data isolation to ensure confidentiality and prevent unauthorized snooping or third-party tracking. All services and file transfers are provided strictly on an &quot;as-is&quot; and &quot;as-available&quot; basis. The platform owner and developers assume no liability for accidental data loss, missing files, failed downloads, or expired links; users are solely and strictly responsible for maintaining independent external backups of all critical files.
         </div>
       </footer>
 
@@ -328,6 +328,28 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
                       You retain 100% full ownership over your files. You can delete or purge files at any time with instant memory wipe. No ghost copies, hidden tracking logs, or background backups are ever retained.
                     </p>
                   </div>
+
+                  {/* Clause 6: Limitation of Liability & Data Loss User Responsibility */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/[0.07] border border-amber-500/30 space-y-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 text-xs flex items-center justify-center font-mono font-bold shrink-0">6</span>
+                      <h3 className="font-bold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                        Limitation of Liability, Data Loss & User Responsibility Notice
+                      </h3>
+                    </div>
+                    <div className="space-y-2 text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                      <p>
+                        <strong>1. Disclaimer of Warranties & Unexpected Issues:</strong> Despite our industry-grade client-side encryption, security mechanisms, and anti-leak architecture, users acknowledge and agree that digital platforms may encounter unforeseen technical glitches, browser cache cleanups, network timeouts, server outages, file corruption, link expirations, download disruptions, or <em>&quot;File Not Found&quot;</em> errors.
+                      </p>
+                      <p>
+                        <strong>2. Zero Owner / Operator Liability:</strong> Under no circumstances shall the platform owner, founders, developers, affiliates, or hosting infrastructure providers be held liable, accountable, or legally responsible for any data deletion, permanent data loss, failed downloads, missing files, or inability to access or retrieve content. All services and features are provided strictly on an <strong>&quot;AS-IS&quot;</strong> and <strong>&quot;AS-AVAILABLE&quot;</strong> basis without express or implied warranties.
+                      </p>
+                      <p className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200/90 font-medium">
+                        ⚠️ <strong>Mandatory User Backup Obligation:</strong> Users are solely, strictly, and unconditionally responsible for maintaining their own secure, external, and offline backup copies of all critical, confidential, sensitive, or irreplaceable files before uploading, transmitting, or sharing them through Velorix.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4 sm:space-y-5 max-w-4xl mx-auto">
@@ -410,6 +432,28 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
                     <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
                       You maintain 100% control over all data. When you delete files or end a session, all transient cache data is instantly wiped from memory with zero ghost copies or residual backups.
                     </p>
+                  </div>
+
+                  {/* Clause 6: Non-Persistence, Data Lifecycle & User Responsibility */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/[0.07] border border-amber-500/30 space-y-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 text-xs flex items-center justify-center font-mono font-bold shrink-0">6</span>
+                      <h3 className="font-bold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                        Data Retention Disclaimer & Personal Backup Responsibility
+                      </h3>
+                    </div>
+                    <div className="space-y-2 text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                      <p>
+                        • <strong>Ephemeral Privacy Lifecycle:</strong> Velorix enforces minimal data retention. Shared files and temporary blobs are automatically purged upon session termination, transfer completion, or custom link expiration.
+                      </p>
+                      <p>
+                        • <strong>No Data Recovery Services or Operator Liability:</strong> Because Velorix is designed as a zero-knowledge, privacy-first transfer protocol and not an archival backup service, the platform owner and operators have no ability or obligation to recover lost, deleted, or inaccessible files. The owner assumes zero liability for missing or deleted content.
+                      </p>
+                      <p className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200/90 font-medium">
+                        🛡️ <strong>Independent Backup Mandate:</strong> Always ensure you retain external, independent copies of all valuable files. Do not utilize Velorix as your sole storage repository.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -605,6 +649,28 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
                   You maintain 100% ownership over your files. Deletion is instantaneous and permanent with zero retention or hidden archival traces.
                 </p>
               </div>
+
+              {/* Clause 6: Limitation of Liability & Mandatory User Backup Responsibility */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/[0.07] border border-amber-500/30 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 text-xs flex items-center justify-center font-mono font-bold shrink-0">6</span>
+                  <h3 className="font-bold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                    Limitation of Liability, Data Loss & User Responsibility Notice
+                  </h3>
+                </div>
+                <div className="space-y-2 text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                  <p>
+                    <strong>1. Disclaimer of Absolute Continuity & Service Disruptions:</strong> Despite Velorix&apos;s rigorous encryption, client-side isolation, and multi-tier network architecture, digital systems remain subject to unexpected technical glitches, connection dropouts, browser storage cleanups, link expirations, network interruptions, or <em>&quot;File Not Found&quot; / download errors</em>.
+                  </p>
+                  <p>
+                    <strong>2. Total Absence of Owner / Operator Liability:</strong> Under no circumstances shall the platform owner, founders, developers, or infrastructure operators be held legally, financially, or personally liable for any accidental loss, deletion, corruption, or inability to download/retrieve your files. The entire platform and all related features are supplied strictly on an <strong>&quot;AS-IS&quot;</strong> and <strong>&quot;AS-AVAILABLE&quot;</strong> basis without warranty of any kind.
+                  </p>
+                  <p className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200/90 font-medium">
+                    ⚠️ <strong>User Responsibility & Backup Mandate:</strong> Users are solely, strictly, and exclusively responsible for maintaining their own secure, external, offline backups of all important, sensitive, or irreplaceable data before using Velorix.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Footer */}
@@ -746,6 +812,28 @@ export const LegalFooterModal: React.FC<LegalFooterModalProps> = ({
                 <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
                   You maintain 100% control over all data. When you delete files or end a session, all transient cache data is instantly wiped from memory with zero ghost copies or residual backups.
                 </p>
+              </div>
+
+              {/* Clause 6: Data Retention Disclaimer & Personal Backup Obligation */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/[0.07] border border-amber-500/30 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 text-xs flex items-center justify-center font-mono font-bold shrink-0">6</span>
+                  <h3 className="font-bold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                    Data Retention Disclaimer & Personal Backup Responsibility
+                  </h3>
+                </div>
+                <div className="space-y-2 text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                  <p>
+                    • <strong>Ephemeral Privacy Lifecycle:</strong> Velorix enforces minimal data retention. Shared files and temporary storage blobs are automatically purged upon session termination, transfer completion, or custom link expiration.
+                  </p>
+                  <p>
+                    • <strong>No Data Recovery Services or Operator Liability:</strong> Because Velorix is designed as a zero-knowledge, privacy-first transfer protocol and not an archival backup service, the platform owner and operators have no ability or obligation to recover lost, deleted, or inaccessible files. The owner assumes zero liability for missing, corrupted, or deleted content.
+                  </p>
+                  <p className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200/90 font-medium">
+                    🛡️ <strong>Independent Backup Mandate:</strong> Always ensure you retain external, independent copies of all valuable files. Do not utilize Velorix as your sole storage repository.
+                  </p>
+                </div>
               </div>
             </div>
 
