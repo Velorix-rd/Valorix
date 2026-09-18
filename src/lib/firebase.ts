@@ -52,9 +52,7 @@ if (typeof window !== 'undefined') {
       try {
         await getDocFromServer(doc(db, 'test', 'connection'));
       } catch (error) {
-        if (error instanceof Error && error.message.includes('the client is offline')) {
-          console.warn('[Firestore] Operating in offline mode until connection is re-established.');
-        }
+        // Silent connection catch - Firestore handles offline cache automatically
       }
     };
     testConnection();
