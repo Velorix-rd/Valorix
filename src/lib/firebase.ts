@@ -44,18 +44,21 @@ const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 // Initialize Firestore with specific database ID as mandated by Firebase skill
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
 
-// Offline-safe connection test
+// Offline-safe connection test (skipped for Search Crawlers and Headless Bots)
 if (typeof window !== 'undefined') {
-  const testConnection = async () => {
-    try {
-      await getDocFromServer(doc(db, 'test', 'connection'));
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('the client is offline')) {
-        console.warn('[Firestore] Operating in offline mode until connection is re-established.');
+  const isBot = /bot|googlebot|crawler|spider|robot|crawling|bingbot/i.test(navigator.userAgent || '');
+  if (!isBot) {
+    const testConnection = async () => {
+      try {
+        await getDocFromServer(doc(db, 'test', 'connection'));
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('the client is offline')) {
+          console.warn('[Firestore] Operating in offline mode until connection is re-established.');
+        }
       }
-    }
-  };
-  testConnection();
+    };
+    testConnection();
+  }
 }
 
 export const auth = getAuth(app);
