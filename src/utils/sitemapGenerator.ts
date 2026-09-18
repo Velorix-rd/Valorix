@@ -95,14 +95,20 @@ export function escapeXml(unsafeStr: string): string {
 }
 
 /**
- * Generate fully compliant XML sitemap string from public files
+ * Generate fully compliant XML sitemap string from public files according to Bing & Google Webmaster Guidelines:
+ * - Absolute canonical URLs only
+ * - No hash fragments (#) or query strings
+ * - Normalized trailing slashes (root has trailing slash, file paths do not)
+ * - Accurate W3C formatted lastmod tags
+ * - Deduplicated unique URL paths
  */
 export function generateDynamicSitemapXml(
   files: SitemapFileEntry[], 
   options: SitemapGenerationOptions = {}
 ): string {
   const rawBaseUrl = options.baseUrl || DEFAULT_BASE_URL;
-  const baseUrl = rawBaseUrl.replace(/\/+$/, '');
+  // Normalize base URL without trailing slash
+  const cleanBaseUrl = rawBaseUrl.trim().replace(/\/+$/, '');
   const today = formatSitemapDate();
 
   // Filter only eligible public files
@@ -115,37 +121,44 @@ export function generateDynamicSitemapXml(
     return timeB - timeA;
   });
 
-  const isGitHubPages = baseUrl.includes('github.io');
+  // Track unique URLs to guarantee zero duplicate paths
+  const seenUrls = new Set<string>();
+  const entries: Array<{ loc: string; lastmod: string; changefreq: string; priority: string }> = [];
 
-  let xmlUrls = '';
-
-  // 1. Root Application URL (Always Highest Priority)
-  xmlUrls += `  <url>
-    <loc>${escapeXml(`${baseUrl}/`)}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>\n`;
+  // 1. Root Application Canonical URL (Must have trailing slash for domain/repo root)
+  const rootUrl = `${cleanBaseUrl}/`;
+  seenUrls.add(rootUrl);
+  entries.push({
+    loc: rootUrl,
+    lastmod: today,
+    changefreq: 'daily',
+    priority: '1.0'
+  });
 
   // 2. Canonical Public Share URLs for each eligible public file
   eligibleFiles.forEach((file) => {
-    const fileLastMod = formatSitemapDate(file.createdAt);
-    // Construct clean canonical share URL
-    const fileShareUrl = isGitHubPages 
-      ? `${baseUrl}/#/share/${encodeURIComponent(file.id)}`
-      : `${baseUrl}/share/${encodeURIComponent(file.id)}`;
+    const cleanId = String(file.id).trim().replace(/^\/+|\/+$/g, '');
+    if (!cleanId) return;
 
-    xmlUrls += `  <url>
-    <loc>${escapeXml(fileShareUrl)}</loc>
-    <lastmod>${fileLastMod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>\n`;
+    // Canonical direct URL without hash (#) or trailing slash
+    const fileShareUrl = `${cleanBaseUrl}/share/${encodeURIComponent(cleanId)}`;
+
+    if (!seenUrls.has(fileShareUrl)) {
+      seenUrls.add(fileShareUrl);
+      const fileLastMod = formatSitemapDate(file.createdAt);
+      entries.push({
+        loc: fileShareUrl,
+        lastmod: fileLastMod,
+        changefreq: 'weekly',
+        priority: '0.8'
+      });
+    }
   });
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="sitemap.xsl"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${xmlUrls.trimEnd()}
-</urlset>`.trim();
+  let xmlUrls = '';
+  entries.forEach((entry) => {
+    xmlUrls += `  <url>\n    <loc>${escapeXml(entry.loc)}</loc>\n    <lastmod>${entry.lastmod}</lastmod>\n    <changefreq>${entry.changefreq}</changefreq>\n    <priority>${entry.priority}</priority>\n  </url>\n`;
+  });
+
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${xmlUrls.trimEnd()}\n</urlset>`.trim();
 }

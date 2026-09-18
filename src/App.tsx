@@ -125,6 +125,7 @@ import FeaturesShowcase from './components/FeaturesShowcase';
 import { SimpleContactFooter } from './components/SimpleContactFooter';
 import { APP_VERSION, APP_VERSION_LABEL } from './config/version';
 import { initRealtimeSitemapSync } from './services/sitemapRealtime';
+import { verifyAndInjectSearchEngineVerificationTags } from './utils/seoMetaValidator';
 
 // --- Types ---
 declare global {
@@ -2088,6 +2089,11 @@ export default function App() {
       setLoading(false);
     });
     return () => unsubscribe();
+  }, []);
+
+  // Dynamic meta-tag verification & injection for Bingbot (msvalidate.01) and Googlebot
+  useEffect(() => {
+    verifyAndInjectSearchEngineVerificationTags();
   }, []);
 
   // Initialize dynamic sitemap live listener to auto-sync public URLs whenever public files change

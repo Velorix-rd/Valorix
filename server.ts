@@ -140,9 +140,12 @@ async function startServer() {
     }
     baseUrl = baseUrl.replace(/\/+$/, '');
 
-    const robotsContent = `User-agent: *
+    const robotsContent = `# ==============================================================================
+# Velorix Dynamic Robots Exclusion Protocol
+# Base URL: ${baseUrl}
+# ==============================================================================
 
-# Explicitly Allowed Public Pages & Assets
+User-agent: *
 Allow: /
 Allow: /Valorix/
 Allow: /Valorix/share/
@@ -157,8 +160,6 @@ Allow: /*.webp$
 Allow: /*.svg$
 Allow: /*.ico$
 Allow: /*.json$
-
-# Disallow Internal Backend, Upload Buffers & Non-Public Data
 Disallow: /api/
 Disallow: /uploads/
 Disallow: /admin/
@@ -169,11 +170,29 @@ Disallow: /*?*secret=
 Disallow: /*?*pwd=
 Disallow: /*?*password=
 
-# Ignore URL Fragment Identifiers & Client-Side Routing Anchors
-Disallow: /*#*
-Disallow: /#*
-Disallow: /Valorix/#*
-Disallow: /*/#/
+# Explicit Bingbot Directive (Bing Webmaster Guidelines & Copilot Grounding)
+User-agent: Bingbot
+Allow: /
+Allow: /Valorix/
+Allow: /Valorix/share/
+Allow: /share/
+Allow: /assets/
+Disallow: /api/
+Disallow: /uploads/
+Disallow: /admin/
+Disallow: /private/
+
+# Explicit Googlebot Directive
+User-agent: Googlebot
+Allow: /
+Allow: /Valorix/
+Allow: /Valorix/share/
+Allow: /share/
+Allow: /assets/
+Disallow: /api/
+Disallow: /uploads/
+Disallow: /admin/
+Disallow: /private/
 
 # Official Clean Canonical XML Sitemap
 Sitemap: ${baseUrl}/sitemap.xml`.trim();
