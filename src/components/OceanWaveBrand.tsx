@@ -62,6 +62,19 @@ export const OceanWaveBrand: React.FC<OceanWaveBrandProps> = ({
         />
       ))}
 
+      {/* Velorix Logo Icon */}
+      <img 
+        src="logo-512.png" 
+        alt="Velorix Logo" 
+        className={`${
+          size === 'sm' ? 'w-5 h-5 mr-1.5' :
+          size === 'md' ? 'w-7 h-7 mr-2' :
+          size === 'lg' ? 'w-9 h-9 mr-2.5' :
+          size === 'xl' ? 'w-11 h-11 sm:w-13 sm:h-13 mr-3' :
+          'w-14 h-14 sm:w-16 sm:h-16 mr-3.5'
+        } inline-block object-contain drop-shadow-[0_0_12px_rgba(16,185,129,0.5)] rounded-xl animate-pulse`}
+      />
+
       {/* Ocean Wave Letter Stack: 2 Distinct Tones: Vivid Neon Emerald Green + Ultra-Vibrant Electric Cyan Blue */}
       <h1 className={`font-black font-display uppercase flex items-center justify-center gap-0.5 sm:gap-1 ${sizeClasses}`}>
         {letters.map((char, index) => {
