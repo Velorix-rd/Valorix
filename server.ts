@@ -121,6 +121,14 @@ async function startServer() {
     res.send(xml);
   });
 
+  // Google Site Verification HTML File Route (Instant GSC Ownership Verification)
+  app.get('/google:code.html', (req, res) => {
+    const code = req.params.code;
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.status(200).send(`google-site-verification: google${code}.html`);
+  });
+
   // robots.txt route
   app.get('/robots.txt', (req, res) => {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
