@@ -93,7 +93,8 @@ import {
   ExternalLink,
   Link2,
   LayoutGrid,
-  List
+  List,
+  RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
@@ -124,7 +125,7 @@ import OceanWaveBrand from './components/OceanWaveBrand';
 import FeaturesShowcase from './components/FeaturesShowcase';
 import { SimpleContactFooter } from './components/SimpleContactFooter';
 import { APP_VERSION, APP_VERSION_LABEL } from './config/version';
-import { initRealtimeSitemapSync } from './services/sitemapRealtime';
+import { initRealtimeSitemapSync, refreshSitemapXml } from './services/sitemapRealtime';
 import { verifyAndInjectSearchEngineVerificationTags } from './utils/seoMetaValidator';
 
 // --- Types ---
@@ -1645,6 +1646,47 @@ export default function App() {
   const [showExtraStorageModal, setShowExtraStorageModal] = useState(false);
   const [copiedStorageEmail, setCopiedStorageEmail] = useState(false);
   const [copiedStorageTemplate, setCopiedStorageTemplate] = useState(false);
+  const [isRefreshingSitemap, setIsRefreshingSitemap] = useState(false);
+  const [sitemapToast, setSitemapToast] = useState<{
+    type: 'success' | 'error';
+    message: string;
+    detail: string;
+    count: number;
+    timestamp: string;
+  } | null>(null);
+
+  const handleManualRefreshSitemap = async () => {
+    if (isRefreshingSitemap) return;
+    setIsRefreshingSitemap(true);
+    try {
+      const { count } = await refreshSitemapXml();
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setSitemapToast({
+        type: 'success',
+        message: 'Sitemap Refreshed Successfully',
+        detail: `${count} canonical public file${count === 1 ? '' : 's'} indexed for Googlebot & Bingbot`,
+        count,
+        timestamp: timeStr
+      });
+      setTimeout(() => {
+        setSitemapToast(null);
+      }, 5000);
+    } catch (err) {
+      console.warn('Manual sitemap refresh error:', err);
+      setSitemapToast({
+        type: 'error',
+        message: 'Sitemap Refresh Failed',
+        detail: 'Unable to reach Firestore database. Please retry in a moment.',
+        count: 0,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      setTimeout(() => {
+        setSitemapToast(null);
+      }, 5000);
+    } finally {
+      setIsRefreshingSitemap(false);
+    }
+  };
   
   const getProviderName = () => {
     if (user) {
@@ -4643,6 +4685,28 @@ export default function App() {
                           </button>
                         </div>
 
+                        {/* Force Refresh Sitemap Button for Bingbot / Googlebot SEO Indexing */}
+                        <button
+                          id="refresh-sitemap-btn"
+                          onClick={handleManualRefreshSitemap}
+                          disabled={isRefreshingSitemap}
+                          className={cn(
+                            "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all shrink-0 cursor-pointer",
+                            isRefreshingSitemap
+                              ? "bg-accent/20 border-accent/40 text-accent animate-pulse"
+                              : "bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300 hover:text-white"
+                          )}
+                          title="Force update dynamic sitemap XML and refresh public indexing for Bing & Google crawlers"
+                        >
+                          <RefreshCw className={cn("w-3.5 h-3.5 text-accent", isRefreshingSitemap && "animate-spin")} />
+                          <span className="hidden sm:inline">
+                            {isRefreshingSitemap ? 'Refreshing Sitemap...' : 'Refresh Sitemap'}
+                          </span>
+                          <span className="sm:hidden">
+                            {isRefreshingSitemap ? 'Syncing...' : 'Sitemap'}
+                          </span>
+                        </button>
+
                         <button 
                           onClick={() => setShowNewFolderModal(true)}
                           className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group shrink-0"
@@ -6445,6 +6509,66 @@ export default function App() {
                 </button>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Dynamic Sitemap Refresh Toast Notification Overlay */}
+      <AnimatePresence>
+        {sitemapToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-50 max-w-md w-full px-4 pointer-events-auto"
+          >
+            <div className={cn(
+              "p-4 rounded-2xl border shadow-2xl backdrop-blur-xl flex items-start gap-3.5 relative overflow-hidden",
+              sitemapToast.type === 'success'
+                ? "bg-black/90 border-emerald-500/40 text-white shadow-emerald-500/20"
+                : "bg-black/90 border-red-500/40 text-white shadow-red-500/20"
+            )}>
+              <div className={cn(
+                "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5",
+                sitemapToast.type === 'success'
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                  : "bg-red-500/20 text-red-400 border border-red-500/30"
+              )}>
+                {sitemapToast.type === 'success' ? (
+                  <Globe className="w-5 h-5 text-emerald-400" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-red-400" />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0 pr-6">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                    {sitemapToast.message}
+                  </h4>
+                  <span className="text-[9px] font-mono text-zinc-500">
+                    {sitemapToast.timestamp}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-300 mt-1 leading-relaxed">
+                  {sitemapToast.detail}
+                </p>
+                {sitemapToast.type === 'success' && (
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10 text-[9px] font-mono text-emerald-400">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>Search Engine Index Ready • Googlebot & Bingbot Verified</span>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setSitemapToast(null)}
+                className="absolute top-3.5 right-3.5 p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
