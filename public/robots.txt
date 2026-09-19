@@ -35,6 +35,13 @@ Allow: /Valorix/
 Allow: /Valorix/share/
 Allow: /share/
 
+User-agent: Googlebot-Image
+Allow: /
+Allow: /Valorix/
+Allow: /*.png$
+Allow: /*.svg$
+Allow: /*.ico$
+
 User-agent: Bingbot
 Allow: /
 Allow: /Valorix/

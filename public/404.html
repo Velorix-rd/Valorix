@@ -25,7 +25,7 @@
           // Detect repository subpath (e.g. /Valorix/ or /velorix/)
           var segments = path.split('/').filter(Boolean);
           var hasRepoPrefix = segments.length > 0 && (segments[0].toLowerCase() === 'valorix' || segments[0].toLowerCase() === 'velorix');
-          var basePath = hasRepoPrefix ? '/' + segments[0] : (path.indexOf('/Valorix') !== -1 ? '/Valorix' : '');
+          var basePath = hasRepoPrefix ? '/' + segments[0] : '/Valorix';
 
           // Redirect to index.html with clean query parameters
           var redirectTarget = origin + basePath + '/?' + 
