@@ -15,6 +15,9 @@ import { generateDynamicSitemapXml, SitemapFileEntry } from '../src/utils/sitema
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 const SITEMAP_PATH = path.join(PUBLIC_DIR, 'sitemap.xml');
+const ROOT_SITEMAP_PATH = path.join(process.cwd(), 'sitemap.xml');
+const SITEMAP_INDEX_PATH = path.join(PUBLIC_DIR, 'sitemap_index.xml');
+const ROOT_SITEMAP_INDEX_PATH = path.join(process.cwd(), 'sitemap_index.xml');
 const BASE_URL = process.env.SITE_URL || 'https://velorix-rd.github.io/Valorix';
 
 async function fetchPublicFilesFromFirestore(): Promise<SitemapFileEntry[]> {
@@ -99,15 +102,33 @@ async function fetchPublicFilesFromFirestore(): Promise<SitemapFileEntry[]> {
 }
 
 async function main() {
-  console.log('[Sitemap Script] Starting dynamic sitemap.xml generation...');
+  console.log('[Sitemap Script] Starting clean sitemap.xml generation for GitHub Pages...');
   fs.ensureDirSync(PUBLIC_DIR);
 
   const publicFiles = await fetchPublicFilesFromFirestore();
-  const xml = generateDynamicSitemapXml(publicFiles, { baseUrl: BASE_URL });
+  // Static GitHub Pages serves SPA - includeShareLinks false ensures zero 404 URLs
+  const xml = generateDynamicSitemapXml(publicFiles, { 
+    baseUrl: BASE_URL,
+    includeShareLinks: false 
+  });
 
   await fs.writeFile(SITEMAP_PATH, xml, 'utf8');
-  console.log(`[Sitemap Script] dynamic sitemap.xml successfully written to ${SITEMAP_PATH}`);
-  console.log(`[Sitemap Script] Included ${publicFiles.length} public share link(s).`);
+  await fs.writeFile(ROOT_SITEMAP_PATH, xml, 'utf8');
+  console.log(`[Sitemap Script] sitemap.xml written to ${SITEMAP_PATH} and ${ROOT_SITEMAP_PATH}`);
+
+  // Generate standard sitemap_index.xml pointing to sitemap.xml (standard for search engines and tools expecting sitemapindex)
+  const today = new Date().toISOString().split('T')[0];
+  const sitemapIndexXml = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>${BASE_URL}/sitemap.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+</sitemapindex>
+`;
+  await fs.writeFile(SITEMAP_INDEX_PATH, sitemapIndexXml, 'utf8');
+  await fs.writeFile(ROOT_SITEMAP_INDEX_PATH, sitemapIndexXml, 'utf8');
+  console.log(`[Sitemap Script] sitemap_index.xml written to ${SITEMAP_INDEX_PATH} and ${ROOT_SITEMAP_INDEX_PATH}`);
 }
 
 main().catch((err) => {

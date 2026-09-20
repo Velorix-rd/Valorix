@@ -20,6 +20,7 @@ export interface SitemapFileEntry {
 export interface SitemapGenerationOptions {
   baseUrl?: string;
   includeStaticPages?: boolean;
+  includeShareLinks?: boolean;
 }
 
 const DEFAULT_BASE_URL = 'https://velorix-rd.github.io/Valorix';
@@ -135,25 +136,27 @@ export function generateDynamicSitemapXml(
     priority: '1.0'
   });
 
-  // 2. Canonical Public Share URLs for each eligible public file
-  eligibleFiles.forEach((file) => {
-    const cleanId = String(file.id).trim().replace(/^\/+|\/+$/g, '');
-    if (!cleanId) return;
+  // 2. Canonical Public Share URLs (only if explicit SSR/static prerender is enabled)
+  if (options.includeShareLinks === true) {
+    eligibleFiles.forEach((file) => {
+      const cleanId = String(file.id).trim().replace(/^\/+|\/+$/g, '');
+      if (!cleanId) return;
 
-    // Canonical direct URL without hash (#) or trailing slash
-    const fileShareUrl = `${cleanBaseUrl}/share/${encodeURIComponent(cleanId)}`;
+      // Canonical direct URL without hash (#) or trailing slash
+      const fileShareUrl = `${cleanBaseUrl}/share/${encodeURIComponent(cleanId)}`;
 
-    if (!seenUrls.has(fileShareUrl)) {
-      seenUrls.add(fileShareUrl);
-      const fileLastMod = formatSitemapDate(file.createdAt);
-      entries.push({
-        loc: fileShareUrl,
-        lastmod: fileLastMod,
-        changefreq: 'weekly',
-        priority: '0.8'
-      });
-    }
-  });
+      if (!seenUrls.has(fileShareUrl)) {
+        seenUrls.add(fileShareUrl);
+        const fileLastMod = formatSitemapDate(file.createdAt);
+        entries.push({
+          loc: fileShareUrl,
+          lastmod: fileLastMod,
+          changefreq: 'weekly',
+          priority: '0.8'
+        });
+      }
+    });
+  }
 
   let xmlUrls = '';
   entries.forEach((entry) => {
