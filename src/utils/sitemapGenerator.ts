@@ -23,6 +23,22 @@ export interface SitemapGenerationOptions {
   includeShareLinks?: boolean;
 }
 
+export interface StaticSitemapRoute {
+  path: string;
+  changefreq: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+  priority: string;
+}
+
+export const OFFICIAL_PLATFORM_ROUTES: StaticSitemapRoute[] = [
+  { path: 'vault/', changefreq: 'daily', priority: '0.9' },
+  { path: 'transfer/', changefreq: 'daily', priority: '0.9' },
+  { path: 'tools/', changefreq: 'weekly', priority: '0.9' },
+  { path: 'security/', changefreq: 'monthly', priority: '0.8' },
+  { path: 'docs/', changefreq: 'weekly', priority: '0.8' },
+  { path: 'privacy/', changefreq: 'monthly', priority: '0.6' },
+  { path: 'terms/', changefreq: 'monthly', priority: '0.6' }
+];
+
 const DEFAULT_BASE_URL = 'https://velorix-rd.github.io/Valorix';
 
 /**
@@ -136,7 +152,23 @@ export function generateDynamicSitemapXml(
     priority: '1.0'
   });
 
-  // 2. Canonical Public Share URLs (only if explicit SSR/static prerender is enabled)
+  // 2. Official Platform Section & Tool Pages (Guaranteed HTTP 200 OK static destinations)
+  if (options.includeStaticPages !== false) {
+    OFFICIAL_PLATFORM_ROUTES.forEach((route) => {
+      const pageUrl = `${cleanBaseUrl}/${route.path}`;
+      if (!seenUrls.has(pageUrl)) {
+        seenUrls.add(pageUrl);
+        entries.push({
+          loc: pageUrl,
+          lastmod: today,
+          changefreq: route.changefreq,
+          priority: route.priority
+        });
+      }
+    });
+  }
+
+  // 3. Canonical Public Share URLs (only if explicit SSR/static prerender is enabled)
   if (options.includeShareLinks === true) {
     eligibleFiles.forEach((file) => {
       const cleanId = String(file.id).trim().replace(/^\/+|\/+$/g, '');

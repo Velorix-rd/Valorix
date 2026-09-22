@@ -1602,8 +1602,30 @@ export default function App() {
   const [isScrolling, setIsScrolling] = useState(false);
   const [hasReachedBottom, setHasReachedBottom] = useState(false);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [view, setView] = useState<'landing' | 'vault'>('landing');
-  const [activeTab, setActiveTab] = useState<'home' | 'vault' | 'activity' | 'profile'>('vault');
+  const [view, setView] = useState<'landing' | 'vault'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const v = params.get('view') || params.get('tab');
+        if (v === 'vault' || v === 'activity' || v === 'transfer' || v === 'profile') {
+          return 'vault';
+        }
+      } catch {}
+    }
+    return 'landing';
+  });
+  const [activeTab, setActiveTab] = useState<'home' | 'vault' | 'activity' | 'profile'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const v = params.get('view') || params.get('tab');
+        if (v === 'activity' || v === 'transfer') return 'activity';
+        if (v === 'profile') return 'profile';
+        if (v === 'home') return 'home';
+      } catch {}
+    }
+    return 'vault';
+  });
   const [showOfflineShare, setShowOfflineShare] = useState(false);
   const [initialP2pFile, setInitialP2pFile] = useState<File | null>(null);
   const [showOnlineShareModal, setShowOnlineShareModal] = useState(false);

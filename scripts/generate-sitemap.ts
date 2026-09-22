@@ -12,6 +12,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { generateDynamicSitemapXml, SitemapFileEntry } from '../src/utils/sitemapGenerator.js';
+import { buildStaticPlatformPages } from './generate-static-pages.js';
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 const SITEMAP_PATH = path.join(PUBLIC_DIR, 'sitemap.xml');
@@ -105,10 +106,14 @@ async function main() {
   console.log('[Sitemap Script] Starting clean sitemap.xml generation for GitHub Pages...');
   fs.ensureDirSync(PUBLIC_DIR);
 
+  // 1. Build and emit all physical static HTML landing pages for maximum Bing/Google indexation
+  await buildStaticPlatformPages();
+
   const publicFiles = await fetchPublicFilesFromFirestore();
-  // Static GitHub Pages serves SPA - includeShareLinks false ensures zero 404 URLs
+  // Static GitHub Pages serves SPA - includeShareLinks false ensures zero 404 URLs, includeStaticPages adds all tools/sections
   const xml = generateDynamicSitemapXml(publicFiles, { 
     baseUrl: BASE_URL,
+    includeStaticPages: true,
     includeShareLinks: false 
   });
 

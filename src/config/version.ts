@@ -2,6 +2,6 @@
  * Centralized Application Version Management System
  * Version follows semantic increment: 1.00 -> 1.01 -> 1.02 -> 1.03...
  */
-export const APP_VERSION = "1.07";
-export const APP_BUILD_DATE = "2026-09-21";
+export const APP_VERSION = "1.08";
+export const APP_BUILD_DATE = "2026-09-22";
 export const APP_VERSION_LABEL = `v${APP_VERSION}`;
