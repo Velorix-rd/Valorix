@@ -320,6 +320,354 @@ const PAGES: PageDefinition[] = [
         a: 'Yes, automated systems will block keys and IP ranges associated with automated spam or denial of service attacks.'
       }
     ]
+  },
+  {
+    slug: 'offline-share',
+    title: 'Offline Hotspot Share - No Internet File Transfer',
+    metaTitle: 'Velorix Offline Share - Transfer Files Without Internet Connection',
+    metaDescription: 'Send large files, videos, and APKs without active cellular data or internet. Connect via local Wi-Fi hotspots, QR scanning, and WebRTC on Velorix.',
+    keywords: 'offline file share, Wi-Fi direct transfer, transfer files without internet, hotspot file share, zero data file transfer, Velorix offline',
+    h1: 'Offline Hotspot File Sharing',
+    subtitle: 'Transfer high-resolution videos, archives, and apps directly between devices without cellular data or internet access.',
+    badge: '100% Offline Hotspot P2P',
+    appView: 'vault',
+    features: [
+      {
+        title: 'Zero Cellular Data',
+        desc: 'Direct device-to-device Wi-Fi LAN transfer consumes zero mobile data or monthly cellular quota.',
+        icon: '📶'
+      },
+      {
+        title: 'Instant QR Hotspot Pairing',
+        desc: 'Scan the on-screen QR code with your phone camera to pair devices instantly without typing passwords.',
+        icon: '📱'
+      },
+      {
+        title: 'Acoustic Raga Synth Pairing',
+        desc: 'Features our unique Indian Bansuri sound frequency synthesizer for acoustic proximity pairing between devices.',
+        icon: '🎵'
+      },
+      {
+        title: 'Full Resolution Streaming',
+        desc: 'Transfer 4K videos, full raw photo albums, and large software installers without compression or downscaling.',
+        icon: '⚡'
+      }
+    ],
+    faqs: [
+      {
+        q: 'Do I need an active internet connection to use Offline Share?',
+        a: 'No. You can connect both devices to the same local Wi-Fi network or portable mobile hotspot with cellular data turned off.'
+      },
+      {
+        q: 'Is there a limit on the file size I can transfer offline?',
+        a: 'No. Since files stream directly device-to-device through your local Wi-Fi router, there are zero arbitrary file size limits.'
+      }
+    ]
+  },
+  {
+    slug: 'dock',
+    title: 'Mobile File Dock - Instant Drag-and-Drop Staging',
+    metaTitle: 'Velorix Mobile File Dock - Fast File Staging & Quick Transfer',
+    metaDescription: 'Staging dock for batch uploads, quick drag-and-drop transfers, and seamless mobile-to-desktop file routing on Velorix.',
+    keywords: 'mobile file dock, quick drag drop transfer, file staging dock, fast batch upload, Velorix file dock',
+    h1: 'Velorix Quick File Dock',
+    subtitle: 'Stage multiple files, preview media, and dispatch batch transfers to Cloud Vault or P2P peers with a single gesture.',
+    badge: 'Fast Batch Staging Dock',
+    appView: 'vault',
+    features: [
+      {
+        title: 'Drop Anywhere Experience',
+        desc: 'Drag and drop files anywhere on screen to automatically catch and stage them inside your personal dock.',
+        icon: '📥'
+      },
+      {
+        title: 'Batch Action Controls',
+        desc: 'Select all staged files to send as a combined P2P batch or upload simultaneously to encrypted vault storage.',
+        icon: '📦'
+      },
+      {
+        title: 'Quick Text & Snippet Sharing',
+        desc: 'Drop code snippets, URLs, or notes into the dock to transmit them alongside your binary files.',
+        icon: '📝'
+      },
+      {
+        title: 'Mobile Gesture Optimized',
+        desc: 'Designed with precision touch targets and slide gestures tailored for mobile devices like OPPO, Samsung, and iPhone.',
+        icon: '📱'
+      }
+    ],
+    faqs: [
+      {
+        q: 'How does the File Dock work?',
+        a: 'The Dock acts as a temporary in-browser staging tray. Files you drag into the app are held in memory until you choose to upload or stream them.'
+      },
+      {
+        q: 'Are files in the Dock automatically uploaded to the cloud?',
+        a: 'No. Dock items remain strictly on your local device until you click Upload to Vault or Send via P2P.'
+      }
+    ]
+  },
+  {
+    slug: 'features',
+    title: 'Platform Features & Architecture Matrix',
+    metaTitle: 'Velorix Complete Feature Matrix & Technology Highlights',
+    metaDescription: 'Explore the full architectural capabilities of Velorix: P2P streaming, client-side cryptography, offline hotspot transfers, and multi-tier backend gateways.',
+    keywords: 'Velorix features, file share feature matrix, WebRTC technology, zero-knowledge architecture, Velorix capabilities',
+    h1: 'Velorix Technology & Feature Matrix',
+    subtitle: 'An exhaustive overview of the high-performance protocols, cryptographic safeguards, and user tools built into Velorix.',
+    badge: 'Complete Architectural Showcase',
+    appView: 'landing',
+    features: [
+      {
+        title: 'WebRTC P2P DataChannels',
+        desc: 'Direct peer connection protocols negotiate optimal STUN/TURN routes for near-instant peer streaming.',
+        icon: '⚡'
+      },
+      {
+        title: 'Subtle Sound Synth Pairing',
+        desc: 'Synthesizes pure Vedic raga harmonic frequencies through Web Audio API for sensory proximity confirmation.',
+        icon: '🪈'
+      },
+      {
+        title: 'Multi-Tier Gateway Redundancy',
+        desc: 'Automated fallback routing between primary, secondary, and distributed signaling servers keeps transfers online 24/7.',
+        icon: '🌐'
+      },
+      {
+        title: 'IndexedDB Offline Persistence',
+        desc: 'Local file history and cryptographic key pairs are safely cached in client-side IndexedDB databases.',
+        icon: '💾'
+      }
+    ],
+    faqs: [
+      {
+        q: 'What makes Velorix different from traditional cloud drives?',
+        a: 'Velorix uniquely combines client-side zero-knowledge encryption, direct WebRTC peer transfers, and full offline hotspot sharing into one seamless app.'
+      },
+      {
+        q: 'Is Velorix open source?',
+        a: 'Velorix is deployed transparently on GitHub Pages with accessible client-side code and verifiable cryptographic standards.'
+      }
+    ]
+  },
+  {
+    slug: 'faq',
+    title: 'Frequently Asked Questions & Troubleshooting',
+    metaTitle: 'Velorix FAQ - Answers to Common Security, P2P & Storage Questions',
+    metaDescription: 'Find clear answers to questions about Velorix file transfers, WebRTC NAT traversal, encryption keys, browser compatibility, and storage limits.',
+    keywords: 'Velorix FAQ, file sharing questions, WebRTC troubleshooting, encryption questions, Velorix help',
+    h1: 'Frequently Asked Questions',
+    subtitle: 'Everything you need to know about peer-to-peer transfers, encryption standards, and platform security.',
+    badge: 'Help & Knowledge Base',
+    appView: 'landing',
+    features: [
+      {
+        title: 'Security & Encryption Answers',
+        desc: 'Comprehensive explanations of how AES-256-GCM protects your data before it ever leaves your local device.',
+        icon: '🔒'
+      },
+      {
+        title: 'NAT & Firewall Traversal',
+        desc: 'Learn how our global STUN and TURN relay infrastructure resolves strict firewall and carrier-grade NAT obstacles.',
+        icon: '🛡️'
+      },
+      {
+        title: 'Account & Quota Clarity',
+        desc: 'Understand guest privileges, zero-login transfers, and how to request custom storage allocations.',
+        icon: '👤'
+      },
+      {
+        title: 'Browser Compatibility',
+        desc: 'Velorix runs smoothly on modern Chromium, WebKit, and Gecko engines across Android, iOS, Windows, macOS, and Linux.',
+        icon: '💻'
+      }
+    ],
+    faqs: [
+      {
+        q: 'Do recipients need to install an app to download files?',
+        a: 'No. Recipients simply open the share link or scan the QR code in any modern web browser to stream or download instantly.'
+      },
+      {
+        q: 'What happens if my connection drops during a transfer?',
+        a: 'In Cloud Vault mode, uploaded chunks resume automatically. In P2P mode, WebRTC auto-reconnects as soon as network routes stabilize.'
+      },
+      {
+        q: 'Can I send folders and directories as a single batch?',
+        a: 'Yes! Drag an entire folder or multiple selected files into the File Dock or dropzone to transfer them simultaneously.'
+      }
+    ]
+  },
+  {
+    slug: 'storage',
+    title: 'Cloud Storage Capacity & Quota Management',
+    metaTitle: 'Velorix Cloud Storage Quota & Capacity Options',
+    metaDescription: 'Learn about Velorix encrypted storage tiers, temporary storage policies, and requesting expanded cloud quotas.',
+    keywords: 'Velorix storage, cloud storage quota, free storage tiers, extra storage request, unlimited P2P file share',
+    h1: 'Cloud Storage Capacity & Quotas',
+    subtitle: 'Generous cloud storage for all users, complemented by completely unlimited peer-to-peer transfer bandwidth.',
+    badge: 'High-Capacity Cloud Tiers',
+    appView: 'vault',
+    features: [
+      {
+        title: 'Free Storage for All',
+        desc: 'Instant cloud allocations available immediately in guest mode or tied to your verified email account.',
+        icon: '☁️'
+      },
+      {
+        title: 'Zero P2P Caps',
+        desc: 'Peer-to-peer transfers do not consume cloud quotas. Send terabytes of video or archives with zero restrictions.',
+        icon: '⚡'
+      },
+      {
+        title: 'Automated Lifecycle Purges',
+        desc: 'Temporary files automatically delete upon expiry, keeping your active vault tidy and optimized.',
+        icon: '🧹'
+      },
+      {
+        title: 'Quota Expansion on Request',
+        desc: 'Need high-capacity team or project storage? Submit a 1-click quota expansion request directly from your dashboard.',
+        icon: '📈'
+      }
+    ],
+    faqs: [
+      {
+        q: 'How much free cloud storage do I receive?',
+        a: 'Guests and standard accounts receive generous cloud quotas for active files, while P2P transfers remain completely unlimited.'
+      },
+      {
+        q: 'How do I request additional storage capacity?',
+        a: 'Click the Extra Storage option in your user menu or visit the Storage modal to dispatch a request to platform administrators.'
+      }
+    ]
+  },
+  {
+    slug: 'backup',
+    title: 'GitHub Cloud Sync & Vault Backup',
+    metaTitle: 'Velorix GitHub Cloud Sync - Automated Encrypted Vault Backups',
+    metaDescription: 'Synchronize your encrypted vault records and file references directly to a private GitHub repository for resilient secondary backups.',
+    keywords: 'GitHub cloud sync, repository vault backup, encrypted backup git, Velorix backup, cloud sync tool',
+    h1: 'GitHub Cloud Sync & Vault Backup',
+    subtitle: 'Never lose a file index. Synchronize encrypted metadata and configuration securely to your own GitHub repository.',
+    badge: 'Developer-Grade Cloud Sync',
+    appView: 'vault',
+    features: [
+      {
+        title: 'Private Repo Integration',
+        desc: 'Sync encrypted metadata directly to your private GitHub repository using fine-grained Personal Access Tokens.',
+        icon: '🐙'
+      },
+      {
+        title: 'Client-Side Token Protection',
+        desc: 'Your GitHub access token is stored exclusively in your browser local secure keystore and never sent to central servers.',
+        icon: '🔑'
+      },
+      {
+        title: 'One-Click Vault Restoration',
+        desc: 'Rebuild your entire file vault and metadata index on a brand new computer in seconds with 1-click Git pull.',
+        icon: '🔄'
+      },
+      {
+        title: 'Immutable Version History',
+        desc: 'Every sync creates a timestamped Git commit, providing a verifiable audit trail of your vault status.',
+        icon: '📜'
+      }
+    ],
+    faqs: [
+      {
+        q: 'Is my GitHub token sent to Velorix servers?',
+        a: 'Never. The sync engine communicates directly between your browser and api.github.com using your local browser credentials.'
+      },
+      {
+        q: 'What data is committed to the GitHub repository?',
+        a: 'Only your encrypted file manifest and folder schemas are committed. Unencrypted data is never pushed.'
+      }
+    ]
+  },
+  {
+    slug: 'servers',
+    title: 'Decentralized Gateways & Backend Server Status',
+    metaTitle: 'Velorix Gateways - Multi-Tier Backend Signaling & Server Health',
+    metaDescription: 'Monitor real-time latency, connection health, and signaling gateway tiers across the distributed Velorix network.',
+    keywords: 'Velorix servers, backend gateway status, signaling server health, WebRTC signaling nodes, decentralized gateways',
+    h1: 'Decentralized Signaling Gateways',
+    subtitle: 'Real-time visibility into the multi-tier signaling nodes, STUN/TURN relays, and cloud gateways powering Velorix.',
+    badge: 'Real-Time Network Status',
+    appView: 'vault',
+    features: [
+      {
+        title: 'Multi-Region Gateways',
+        desc: 'Distributed WebSocket signaling servers across Asia, Europe, and North America ensure low-latency peer discovery.',
+        icon: '🌐'
+      },
+      {
+        title: 'Automated Failover',
+        desc: 'If a primary signaling node experiences congestion, the client dynamically transitions to standby gateway tiers.',
+        icon: '⚡'
+      },
+      {
+        title: 'Custom Gateway Support',
+        desc: 'Self-host your own lightweight signaling node and link it into Velorix with a single URL configuration.',
+        icon: '🖥️'
+      },
+      {
+        title: 'Live Latency Ping',
+        desc: 'Evaluate WebSocket ping and handshake times across all network nodes with on-demand diagnostics.',
+        icon: '⏱️'
+      }
+    ],
+    faqs: [
+      {
+        q: 'What do signaling gateways do in Velorix?',
+        a: 'Signaling gateways exchange SDP handshakes and ICE candidates so two devices can find each other before switching to direct P2P.'
+      },
+      {
+        q: 'Do my files pass through the signaling servers?',
+        a: 'No! Signaling servers only pass small connection metadata. Your actual file data travels directly device-to-device.'
+      }
+    ]
+  },
+  {
+    slug: 'contact',
+    title: 'Contact & Developer Support',
+    metaTitle: 'Contact Velorix - Developer Inquiries & Platform Support',
+    metaDescription: 'Get in touch with the Velorix development team. Submit feedback, feature proposals, bug reports, and storage upgrade requests.',
+    keywords: 'contact Velorix, developer support, Velorix feedback, report bug Velorix, contact admin',
+    h1: 'Contact & Platform Support',
+    subtitle: 'Have a question, feedback, or a feature request? Connect directly with the developer team.',
+    badge: 'Direct Developer Channel',
+    appView: 'landing',
+    features: [
+      {
+        title: 'Direct Firestore Messaging',
+        desc: 'Submit feedback directly through our in-app messaging channel with zero email redirection or spam trackers.',
+        icon: '💬'
+      },
+      {
+        title: 'Feature Proposals',
+        desc: 'Suggest improvements, new web utilities, or encryption features you would like to see added to Velorix.',
+        icon: '💡'
+      },
+      {
+        title: 'Bug & Security Reports',
+        desc: 'Report unexpected behavior or vulnerability disclosures directly for swift investigation and patching.',
+        icon: '🛡️'
+      },
+      {
+        title: 'Admin Support',
+        desc: 'Inquiries are personally reviewed by platform maintainers to ensure responsive support.',
+        icon: '🤝'
+      }
+    ],
+    faqs: [
+      {
+        q: 'How fast do administrators respond to inquiries?',
+        a: 'Inquiries submitted through the contact portal are reviewed daily, with typical response times within 24 to 48 hours.'
+      },
+      {
+        q: 'Can I report a bug anonymously?',
+        a: 'Yes. You can submit messages as a guest without creating an account or providing personal credentials.'
+      }
+    ]
   }
 ];
 

@@ -32,9 +32,17 @@ export interface StaticSitemapRoute {
 export const OFFICIAL_PLATFORM_ROUTES: StaticSitemapRoute[] = [
   { path: 'vault/', changefreq: 'daily', priority: '0.9' },
   { path: 'transfer/', changefreq: 'daily', priority: '0.9' },
+  { path: 'offline-share/', changefreq: 'daily', priority: '0.9' },
   { path: 'tools/', changefreq: 'weekly', priority: '0.9' },
+  { path: 'dock/', changefreq: 'weekly', priority: '0.8' },
+  { path: 'storage/', changefreq: 'monthly', priority: '0.8' },
   { path: 'security/', changefreq: 'monthly', priority: '0.8' },
+  { path: 'features/', changefreq: 'weekly', priority: '0.8' },
+  { path: 'backup/', changefreq: 'monthly', priority: '0.8' },
+  { path: 'servers/', changefreq: 'weekly', priority: '0.8' },
   { path: 'docs/', changefreq: 'weekly', priority: '0.8' },
+  { path: 'faq/', changefreq: 'weekly', priority: '0.8' },
+  { path: 'contact/', changefreq: 'monthly', priority: '0.7' },
   { path: 'privacy/', changefreq: 'monthly', priority: '0.6' },
   { path: 'terms/', changefreq: 'monthly', priority: '0.6' }
 ];
