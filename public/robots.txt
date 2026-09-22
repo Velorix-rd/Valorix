@@ -1,73 +1,28 @@
 # ==============================================================================
 # Velorix Robots Exclusion Protocol (robots.txt)
 # Website: https://velorix-rd.github.io/Valorix/
-# Architecture: Single-Page Application (SPA) with P2P Transfer & Public Vault
 # ==============================================================================
 
 User-agent: *
 Allow: /
 Allow: /Valorix/
-Allow: /Valorix/share/
-Allow: /share/
-Allow: /assets/
-Allow: /*.js$
-Allow: /*.css$
-Allow: /*.png$
-Allow: /*.jpg$
-Allow: /*.jpeg$
-Allow: /*.webp$
-Allow: /*.svg$
-Allow: /*.ico$
-Allow: /*.json$
-Disallow: /api/
-Disallow: /uploads/
-Disallow: /admin/
-Disallow: /private/
-Disallow: /*?*token=
-Disallow: /*?*key=
-Disallow: /*?*secret=
-Disallow: /*?*pwd=
-Disallow: /*?*password=
+Allow: /Valorix/vault/
+Allow: /Valorix/transfer/
+Allow: /Valorix/offline-share/
+Allow: /Valorix/tools/
+Allow: /Valorix/dock/
+Allow: /Valorix/storage/
+Allow: /Valorix/security/
+Allow: /Valorix/features/
+Allow: /Valorix/backup/
+Allow: /Valorix/servers/
+Allow: /Valorix/docs/
+Allow: /Valorix/faq/
+Allow: /Valorix/contact/
+Allow: /Valorix/privacy/
+Allow: /Valorix/terms/
 
-User-agent: Googlebot
-Allow: /
-Allow: /Valorix/
-Allow: /Valorix/share/
-Allow: /share/
-
-User-agent: Googlebot-Image
-Allow: /
-Allow: /Valorix/
-Allow: /*.png$
-Allow: /*.svg$
-Allow: /*.ico$
-
-User-agent: Bingbot
-Allow: /
-Allow: /Valorix/
-Allow: /Valorix/share/
-Allow: /share/
-
-User-agent: Slurp
-Allow: /
-Allow: /Valorix/
-
-User-agent: DuckDuckBot
-Allow: /
-Allow: /Valorix/
-
-User-agent: Yandex
-Allow: /
-Allow: /Valorix/
-
-User-agent: Baiduspider
-Allow: /
-Allow: /Valorix/
-
-User-agent: Applebot
-Allow: /
-Allow: /Valorix/
-
-# --- Official Clean Canonical XML Sitemaps ---
+# Canonical XML Sitemaps
 Sitemap: https://velorix-rd.github.io/Valorix/sitemap.xml
 Sitemap: https://velorix-rd.github.io/Valorix/sitemap_index.xml
+
