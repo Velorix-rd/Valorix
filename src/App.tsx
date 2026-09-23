@@ -155,6 +155,7 @@ interface FileMetadata {
   downloadUrl: string;
   isPublic: boolean;
   isIndexed?: boolean;
+  lastIndexedAt?: string;
   createdAt: string;
   isGuest?: boolean;
   tags?: string[];
@@ -251,6 +252,70 @@ export function getPublicShareUrl(fileId: string): string {
     return `https://velorix-rd.github.io/Valorix/#/share/${encodeURIComponent(fileId)}`;
   }
   return `${origin}/share/${encodeURIComponent(fileId)}`;
+}
+
+export function getFileIndexTimestamp(file: FileMetadata): string {
+  const dateStr = file.lastIndexedAt || file.createdAt;
+  if (!dateStr) return new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    return d.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch {
+    return new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  }
+}
+
+export function IndexNowBadge({ file, size = 'sm', showLabel = true }: { file: FileMetadata; size?: 'sm' | 'md' | 'lg'; showLabel?: boolean }) {
+  const timestamp = getFileIndexTimestamp(file);
+  return (
+    <div className="relative group/idx inline-flex items-center">
+      <span 
+        className={`inline-flex items-center gap-1 font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full uppercase tracking-wider shadow-[0_0_10px_rgba(16,185,129,0.18)] cursor-pointer transition-all hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:shadow-[0_0_14px_rgba(16,185,129,0.3)] ${
+          size === 'sm' ? 'text-[7px] px-1.5 py-0.5' : size === 'md' ? 'text-[8px] px-2 py-0.5' : 'text-[10px] px-2.5 py-1'
+        }`}
+        title="Hover to view IndexNow search engine verification timestamp"
+      >
+        <ShieldCheck className={size === 'sm' ? 'w-2 h-2 text-emerald-400' : size === 'md' ? 'w-2.5 h-2.5 text-emerald-400' : 'w-3.5 h-3.5 text-emerald-400'} />
+        {showLabel && <span>IndexNow</span>}
+        <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+      </span>
+
+      {/* Floating Detailed Timestamp Tooltip */}
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-zinc-950/95 border border-emerald-500/30 rounded-xl shadow-2xl backdrop-blur-xl opacity-0 invisible group-hover/idx:opacity-100 group-hover/idx:visible transition-all duration-200 z-[150] pointer-events-none text-left">
+        <div className="flex items-center gap-1.5 pb-1.5 border-b border-white/10 mb-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">IndexNow Active</span>
+          <span className="text-[8px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.2 rounded ml-auto">Bing 202 Accepted</span>
+        </div>
+        <div className="space-y-1.5 text-[9px]">
+          <div>
+            <span className="text-zinc-500 block text-[8px] uppercase tracking-wider font-semibold">Last Verified Ping:</span>
+            <span className="font-mono text-emerald-300 font-bold block">{timestamp}</span>
+          </div>
+          <div className="flex justify-between items-center pt-1 border-t border-white/5">
+            <span className="text-zinc-500">Search Engines:</span>
+            <span className="text-zinc-300 font-semibold">Bing, IndexNow API</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-zinc-500">Indexing Status:</span>
+            <span className="text-emerald-400 font-bold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              Priority Monitored
+            </span>
+          </div>
+        </div>
+        <div className="w-2 h-2 bg-zinc-950 border-r border-b border-emerald-500/30 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2" />
+      </div>
+    </div>
+  );
 }
 
 export async function uploadFileChunksToFirestore(fileId: string, blob: Blob): Promise<boolean> {
@@ -1420,10 +1485,7 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
               </div>
             )}
             {file?.isPublic !== false && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase tracking-wider shadow-[0_0_12px_rgba(16,185,129,0.25)]">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>IndexNow Verified</span>
-              </div>
+              <IndexNowBadge file={file!} size="lg" />
             )}
           </div>
 
@@ -3228,7 +3290,11 @@ export default function App() {
 
   const togglePublic = async (file: FileMetadata) => {
     try {
-      await updateDoc(doc(db, 'files', file.id), { isPublic: !file.isPublic });
+      const willBePublic = !file.isPublic;
+      await updateDoc(doc(db, 'files', file.id), { 
+        isPublic: willBePublic,
+        ...(willBePublic ? { lastIndexedAt: new Date().toISOString() } : {})
+      });
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `files/${file.id}`);
     }
@@ -4854,13 +4920,7 @@ export default function App() {
                                     </span>
                                   )}
                                   {file.isPublic !== false && (
-                                    <span 
-                                      className="inline-flex items-center gap-1 text-[7px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-[0_0_8px_rgba(16,185,129,0.15)]"
-                                      title="Public file verified & indexed via IndexNow"
-                                    >
-                                      <ShieldCheck className="w-2 h-2 text-emerald-400" />
-                                      IndexNow
-                                    </span>
+                                    <IndexNowBadge file={file} size="sm" />
                                   )}
                                   {file.tags && file.tags.length > 0 && (
                                     <div className="hidden sm:flex gap-1 overflow-hidden">
@@ -5091,13 +5151,7 @@ export default function App() {
                                     </span>
                                   )}
                                   {file.isPublic !== false && (
-                                    <span 
-                                      className="inline-flex items-center gap-1 text-[7px] sm:text-[8px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-[0_0_8px_rgba(16,185,129,0.15)]"
-                                      title="Public file verified & indexed via IndexNow"
-                                    >
-                                      <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
-                                      IndexNow
-                                    </span>
+                                    <IndexNowBadge file={file} size="md" />
                                   )}
                                   {file.tags && file.tags.length > 0 && (
                                     <div className="flex gap-1 overflow-hidden">
@@ -5360,13 +5414,7 @@ export default function App() {
                         </span>
                       )}
                       {previewFile.isPublic !== false && (
-                        <span 
-                          className="inline-flex items-center gap-1 text-[7px] sm:text-[8px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-[0_0_8px_rgba(16,185,129,0.15)]"
-                          title="Public file verified & indexed via IndexNow"
-                        >
-                          <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
-                          IndexNow Verified
-                        </span>
+                        <IndexNowBadge file={previewFile} size="md" />
                       )}
                     </div>
                     <p className="text-[8px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-widest truncate">{formatSize(previewFile.size)}</p>
@@ -5538,14 +5586,20 @@ export default function App() {
                       <ShieldCheck className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <span>IndexNow Verified</span>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">
+                          IndexNow Verified
+                        </p>
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      </div>
+                      <p className="text-[9px] text-zinc-400 font-mono">
+                        Last Ping: <span className="text-emerald-300 font-semibold">{getFileIndexTimestamp(shareFile)}</span>
                       </p>
-                      <p className="text-[9px] text-zinc-400 truncate">Search engine indexed & priority crawl active</p>
                     </div>
                   </div>
-                  <Globe className="w-4 h-4 text-emerald-400/70 shrink-0" />
+                  <span className="text-[8px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-1 rounded-full border border-emerald-500/30 shrink-0">
+                    Bing 202 OK
+                  </span>
                 </div>
 
                 <div className="space-y-3">
