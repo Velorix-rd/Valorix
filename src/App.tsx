@@ -154,6 +154,7 @@ interface FileMetadata {
   ownerId: string;
   downloadUrl: string;
   isPublic: boolean;
+  isIndexed?: boolean;
   createdAt: string;
   isGuest?: boolean;
   tags?: string[];
@@ -1411,12 +1412,20 @@ function PublicDownloadPage({ shareId, logoUrl, onBackHome }: { shareId: string,
             <FileTypeIcon type={file!.type} />
           </div>
 
-          {file?.isEncrypted && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-wider mb-6">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>AES-256-GCM Encrypted at Rest</span>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+            {file?.isEncrypted && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>AES-256-GCM Encrypted</span>
+              </div>
+            )}
+            {file?.isPublic !== false && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase tracking-wider shadow-[0_0_12px_rgba(16,185,129,0.25)]">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>IndexNow Verified</span>
+              </div>
+            )}
+          </div>
 
           {/* Inline Preview for Public Page */}
           <div className="mb-8 sm:mb-12">
@@ -4844,6 +4853,15 @@ export default function App() {
                                       AES-256
                                     </span>
                                   )}
+                                  {file.isPublic !== false && (
+                                    <span 
+                                      className="inline-flex items-center gap-1 text-[7px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-[0_0_8px_rgba(16,185,129,0.15)]"
+                                      title="Public file verified & indexed via IndexNow"
+                                    >
+                                      <ShieldCheck className="w-2 h-2 text-emerald-400" />
+                                      IndexNow
+                                    </span>
+                                  )}
                                   {file.tags && file.tags.length > 0 && (
                                     <div className="hidden sm:flex gap-1 overflow-hidden">
                                       {file.tags.slice(0, 2).map(tag => (
@@ -5070,6 +5088,15 @@ export default function App() {
                                     <span className="inline-flex items-center gap-1 text-[7px] sm:text-[8px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
                                       <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
                                       AES-256 Encrypted
+                                    </span>
+                                  )}
+                                  {file.isPublic !== false && (
+                                    <span 
+                                      className="inline-flex items-center gap-1 text-[7px] sm:text-[8px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-[0_0_8px_rgba(16,185,129,0.15)]"
+                                      title="Public file verified & indexed via IndexNow"
+                                    >
+                                      <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
+                                      IndexNow
                                     </span>
                                   )}
                                   {file.tags && file.tags.length > 0 && (
@@ -5332,6 +5359,15 @@ export default function App() {
                           AES-256 Encrypted
                         </span>
                       )}
+                      {previewFile.isPublic !== false && (
+                        <span 
+                          className="inline-flex items-center gap-1 text-[7px] sm:text-[8px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-[0_0_8px_rgba(16,185,129,0.15)]"
+                          title="Public file verified & indexed via IndexNow"
+                        >
+                          <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
+                          IndexNow Verified
+                        </span>
+                      )}
                     </div>
                     <p className="text-[8px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-widest truncate">{formatSize(previewFile.size)}</p>
                   </div>
@@ -5493,6 +5529,23 @@ export default function App() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* IndexNow Search Engine Status Indicator */}
+                <div className="mb-6 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-left flex items-center justify-between gap-3 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>IndexNow Verified</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      </p>
+                      <p className="text-[9px] text-zinc-400 truncate">Search engine indexed & priority crawl active</p>
+                    </div>
+                  </div>
+                  <Globe className="w-4 h-4 text-emerald-400/70 shrink-0" />
                 </div>
 
                 <div className="space-y-3">
