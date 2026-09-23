@@ -3,8 +3,8 @@
  * Submits all official Velorix platform URLs to Bing & IndexNow search engines.
  */
 
-const INDEXNOW_KEY = '86f31503cef4431ea9cff81ecfe13a36';
-const KEY_LOCATION = 'https://velorix-rd.github.io/Valorix/86f31503cef4431ea9cff81ecfe13a36.txt';
+const INDEXNOW_KEY = '45b5b52ea2554f9abdf0e4912816c6db';
+const KEY_LOCATION = 'https://velorix-rd.github.io/Valorix/45b5b52ea2554f9abdf0e4912816c6db.txt';
 const HOST = 'velorix-rd.github.io';
 
 const URL_LIST = [
@@ -68,3 +68,4 @@ async function submitToIndexNow() {
 }
 
 submitToIndexNow();
+
